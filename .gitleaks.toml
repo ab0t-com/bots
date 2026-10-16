@@ -24,10 +24,9 @@ stopwords = [
 ]
 
 # ── Guard: service-admin password DERIVED from a public identifier ───────────────
-# Ticket auth/output/tickets/20261016_service_admin_passwords_derived_and_public (CRITICAL):
-# legacy registration scripts set the service-admin password to <ServiceName>Admin<year>!Secure,
-# the derivation was published, and such a password worked in production. Any occurrence of the
-# pattern (script, doc, example) is a finding; generate a random password and save it to the
+# Never ship a credential computed from a public identifier (e.g. a service name plus a fixed
+# suffix such as <Name>Admin<year>!Secure). Any occurrence of such a pattern (script, doc,
+# example) is a finding; generate a random password and save it to the
 # 0600 credentials file instead. Matches only the fixed suffix, so a placeholder allowlist
 # (<...>, {VAR}) can never hide a templated derivation.
 [[rules]]
