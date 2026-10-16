@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# Pre-commit secret scan for ab0t-com/bots (public repo).
+# Blocks a commit if gitleaks finds a secret in the STAGED changes.
+#
+# Enable once per clone (in the bots repo itself — never in a parent monorepo):
+#     git config core.hooksPath .githooks
+#
+set -euo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "⚠  gitleaks not installed — secret scan SKIPPED."
+  echo "   Install it so this hook can protect the repo:"
+  echo "     https://github.com/gitleaks/gitleaks#installing"
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+if gitleaks git --staged --no-banner --redact \
+     --config "${REPO_ROOT}/.gitleaks.toml"; then
+  exit 0
+else
+  echo
+  echo "✖ gitleaks found a potential secret in your staged changes — commit blocked."
+  echo "  • Real secret?  Remove it and rotate the key."
+  echo "  • False positive (an example value)? Use an obvious placeholder (ab0t_sk_live_EXAMPLE…, xxxx, <your-key>)"
+  echo "    or add a narrow allowlist rule to .gitleaks.toml."
+  exit 1
+fi

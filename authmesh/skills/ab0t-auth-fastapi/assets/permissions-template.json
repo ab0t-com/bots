@@ -1,0 +1,324 @@
+{
+  "$schema": "https://auth.service.ab0t.com/schemas/permissions/v2",
+  "service": {
+    "id": "myservice",
+    "name": "My Service",
+    "description": "Example: a compute service where users allocate, run and manage resources",
+    "version": "1.0.0",
+    "audience": "myservice",
+    "maintainer": "<your-team>@example.com"
+  },
+  "registration": {
+    "service": "myservice",
+    "actions": [
+      "read",
+      "write",
+      "create",
+      "delete",
+      "scale",
+      "execute",
+      "admin",
+      "ssh",
+      "logs",
+      "metrics",
+      "cross_tenant"
+    ],
+    "resources": [
+      "allocations",
+      "instances",
+      "deployments",
+      "containers",
+      "workflows",
+      "costs",
+      "quotas",
+      "config"
+    ]
+  },
+  "permissions": [
+    {
+      "id": "myservice.read",
+      "name": "Read Resources",
+      "description": "View your own allocations, instances and status",
+      "intent": "Basic read access. Required for dashboard access.",
+      "risk_level": "low",
+      "cost_impact": false,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.create.allocations",
+      "name": "Create Allocations",
+      "description": "Allocate new compute resources",
+      "intent": "Each allocation consumes cloud resources and incurs costs.",
+      "risk_level": "medium",
+      "cost_impact": true,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.create.deployments",
+      "name": "Create Deployments",
+      "description": "Create new deployments",
+      "intent": "Deploy resources via the supported engines.",
+      "risk_level": "medium",
+      "cost_impact": true,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.write",
+      "name": "Modify Resources",
+      "description": "Start, stop and modify your own resources",
+      "intent": "Resource lifecycle management (start/stop).",
+      "risk_level": "medium",
+      "cost_impact": true,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.scale",
+      "name": "Scale Resources",
+      "description": "Scale your own allocations up or down",
+      "intent": "Adjust capacity. Scaling affects costs.",
+      "risk_level": "medium",
+      "cost_impact": true,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.delete",
+      "name": "Delete Resources",
+      "description": "Permanently terminate your own allocations",
+      "intent": "Termination is irreversible, so it is granted explicitly (team or admin), not to every new user.",
+      "risk_level": "high",
+      "cost_impact": true,
+      "default_grant": false,
+      "security_notes": "Termination stops billing but data cannot be recovered."
+    },
+    {
+      "id": "myservice.execute.instances",
+      "name": "Execute in Instances",
+      "description": "Run commands inside your own compute environments",
+      "intent": "Running arbitrary commands inside containers/VMs.",
+      "risk_level": "high",
+      "cost_impact": false,
+      "default_grant": false,
+      "security_notes": "Commands are isolated within the allocated container/VM."
+    },
+    {
+      "id": "myservice.execute.containers",
+      "name": "Execute in Containers",
+      "description": "Run commands inside your own containers",
+      "intent": "Running commands inside containers.",
+      "risk_level": "high",
+      "cost_impact": false,
+      "default_grant": false
+    },
+    {
+      "id": "myservice.ssh.instances",
+      "name": "SSH Access",
+      "description": "SSH or console into your own instances",
+      "intent": "Direct shell access for debugging.",
+      "risk_level": "high",
+      "cost_impact": false,
+      "default_grant": false,
+      "security_notes": "Interactive access bypasses structured command logging. Prefer execute for non-interactive commands."
+    },
+    {
+      "id": "myservice.logs",
+      "name": "View Logs",
+      "description": "View logs from your own resources",
+      "risk_level": "low",
+      "cost_impact": false,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.metrics",
+      "name": "View Metrics",
+      "description": "View metrics from your own resources",
+      "risk_level": "low",
+      "cost_impact": false,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.read.costs",
+      "name": "Read Costs",
+      "description": "View your own cost reports and usage",
+      "risk_level": "low",
+      "cost_impact": false,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.admin.costs",
+      "name": "Cost Administrator",
+      "description": "Org-wide cost data and budgets",
+      "intent": "Org-level billing admin inside your own org.",
+      "risk_level": "high",
+      "cost_impact": true,
+      "default_grant": false,
+      "implies": ["myservice.read.costs"]
+    },
+    {
+      "id": "myservice.read.quotas",
+      "name": "Read Quotas",
+      "description": "View your own quota limits and usage",
+      "risk_level": "low",
+      "cost_impact": false,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.admin.quotas",
+      "name": "Quota Administrator",
+      "description": "Manage quota limits for users in your org",
+      "risk_level": "high",
+      "cost_impact": true,
+      "default_grant": false,
+      "implies": ["myservice.read.quotas"]
+    },
+    {
+      "id": "myservice.read.workflows",
+      "name": "Read Workflows",
+      "description": "View workflow definitions",
+      "risk_level": "low",
+      "cost_impact": false,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.create.workflows",
+      "name": "Create Workflows",
+      "description": "Create workflow definitions",
+      "risk_level": "medium",
+      "cost_impact": false,
+      "default_grant": true
+    },
+    {
+      "id": "myservice.execute.workflows",
+      "name": "Execute Workflows",
+      "description": "Run workflows (may provision resources and incur costs)",
+      "risk_level": "high",
+      "cost_impact": true,
+      "default_grant": false
+    },
+    {
+      "id": "myservice.admin",
+      "name": "Administrator",
+      "description": "Administer every resource inside your own org",
+      "intent": "Org-level admin: view, modify, scale, delete ANY resource in the org. Never other orgs.",
+      "risk_level": "critical",
+      "cost_impact": true,
+      "default_grant": false,
+      "implies": [
+        "myservice.read",
+        "myservice.write",
+        "myservice.scale",
+        "myservice.delete",
+        "myservice.execute.instances",
+        "myservice.execute.containers",
+        "myservice.logs",
+        "myservice.metrics",
+        "myservice.create.allocations",
+        "myservice.create.deployments",
+        "myservice.read.costs",
+        "myservice.read.quotas",
+        "myservice.admin.costs",
+        "myservice.admin.quotas"
+      ]
+    },
+    {
+      "id": "myservice.read.config",
+      "name": "Read Platform Config",
+      "description": "View your service's platform-wide configuration",
+      "intent": "For your own operators only.",
+      "risk_level": "high",
+      "cost_impact": false,
+      "default_grant": false,
+      "scope": "platform"
+    },
+    {
+      "id": "myservice.admin.config",
+      "name": "Platform Administrator",
+      "description": "Platform-wide administration of your service",
+      "intent": "For your own operators only: system health, configuration.",
+      "risk_level": "critical",
+      "cost_impact": false,
+      "default_grant": false,
+      "scope": "platform"
+    },
+    {
+      "id": "myservice.cross_tenant",
+      "name": "Cross-Tenant Access",
+      "description": "Access resources in any customer's organization",
+      "intent": "Support permission. Reaches across every customer.",
+      "risk_level": "critical",
+      "cost_impact": false,
+      "default_grant": false,
+      "scope": "platform",
+      "security_notes": "Log and audit every cross-tenant access. Grant one person at a time with authsetup grant-platform."
+    }
+  ],
+  "roles": [
+    {
+      "id": "myservice-user",
+      "name": "User",
+      "description": "Everyday user with access to their own resources",
+      "permissions": [
+        "myservice.read",
+        "myservice.create.allocations",
+        "myservice.create.deployments",
+        "myservice.write",
+        "myservice.scale",
+        "myservice.logs",
+        "myservice.metrics",
+        "myservice.read.costs",
+        "myservice.read.quotas",
+        "myservice.read.workflows",
+        "myservice.create.workflows"
+      ],
+      "default": true
+    },
+    {
+      "id": "myservice-viewer",
+      "name": "Viewer",
+      "description": "Read-only access (e.g. auditors)",
+      "permissions": [
+        "myservice.read",
+        "myservice.logs",
+        "myservice.metrics",
+        "myservice.read.costs",
+        "myservice.read.quotas"
+      ],
+      "default": false
+    },
+    {
+      "id": "myservice-operator",
+      "name": "Operator",
+      "description": "Manage resources but not create new ones",
+      "permissions": [
+        "myservice.read",
+        "myservice.write",
+        "myservice.scale",
+        "myservice.execute.instances",
+        "myservice.execute.containers",
+        "myservice.ssh.instances",
+        "myservice.logs",
+        "myservice.metrics"
+      ],
+      "default": false
+    },
+    {
+      "id": "myservice-admin",
+      "name": "Admin",
+      "description": "Org admin of myservice",
+      "permissions": [
+        "myservice.admin"
+      ],
+      "default": false
+    }
+  ],
+  "multi_tenancy": {
+    "isolation_model": "organization",
+    "tenant_field": "org_id",
+    "enforcement": "strict",
+    "cross_tenant_permission": "myservice.cross_tenant"
+  },
+  "end_users": {
+    "default_role": "myservice-user",
+    "default_team_name": "Default Users",
+    "org_structure": { "pattern": "flat", "config": {} }
+  }
+}

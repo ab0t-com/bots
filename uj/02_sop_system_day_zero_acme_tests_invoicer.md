@@ -1,0 +1,27 @@
+# 02 · Day zero: Acme tests `invoicer`
+
+Acme's `invoicer` is a small invoicing API: customers sign up, log in, create invoices, send them, and delete drafts (Acme's API; yours will differ). It runs locally at `http://localhost:8080` and in staging at `https://invoicer.staging.acme.example`. Maya (Acme's product manager) wants the core story protected before the next release; Dev (Acme's engineer) wants it in CI. Here is the whole first day, in order.
+
+**1. Install uj (two minutes).** `curl -fsSL https://raw.githubusercontent.com/ab0t-com/uj/main/install.sh | sh`, then `uj --version` prints `uj 0.1.1-public`. A `curl | sh` pipe cannot report a failed download, so the version line is the check. (SOP 03.)
+
+**2. Make the project (five minutes).** In the `invoicer` repo, Dev runs `uj init --openapi http://localhost:8080/openapi.json`. uj creates the project at the repo's root, whatever folder Dev is in, and writes `harness.toml` (the project's name and id, and the target), a drafted `environment.json`, `journeys/_EXAMPLE.yaml` (an annotated reference that is never run), `HARNESS.md` for teammates, the `.uj/` memory folder, and adds `runs/` to `.gitignore`. It prints what it detected (`signup=POST /signup, login=POST /login`) and anything to confirm. Dev adds a second target for staging. (SOP 04.)
+
+**3. Decide what setup does (ten minutes).** Most of Acme's journeys need a logged-in customer, but signing up is not the point of them, so setup signs up a fresh user and logs in, capturing the token as a secret. The password comes from `{env:ACME_QA_PASSWORD}`, never from the file. The one journey *about* signing up does its own signup instead. `uj doctor` confirms the target answers and lists what every journey gets: `{email}, {name}, {pass}, {token}`. (SOP 05.)
+
+**4. Decide what to test (half an hour).** Maya fills `.uj/product.context` (who uses `invoicer`, the environments, the test-data rules) and lists what would hurt most in `.uj/risks.context`: `invoice-isolation` (a customer sees another's invoices, P0), `activation` (a new customer cannot send a first invoice alone, P0), `amount-accuracy` (the amount sent differs from the amount typed, P0), `send-integrity` (a sent invoice changes, P1), `delete-means-gone` (a deleted invoice still shows up, P1), `invoice-email` (the client never gets the email, P1). `uj coverage` now reports six gaps. Each becomes a realistic session with the risky part checked along the way, naming the risk ids in `covers:`. (SOP 06.)
+
+**5. Write the first journey (forty minutes).** `uj new journey "A new customer sends their first invoice"` scaffolds a file with tips. Maya writes the intents and the story; Dev fills the mechanics: create an invoice, see it in the list, send it, see it marked sent, an anonymous caller refused, cleanup in `finally`. `uj explain` reads it back as a story, `uj lint` gives authoring nudges, `uj validate` confirms it is well-formed. (SOPs 07, 08.)
+
+**6. First run (one minute).** `uj run` runs everything in `journeys/` against the default target. The first line names the target, so nobody tests the wrong service by accident. One step fails: the response has `"status": "draft"` where Maya expected `"sent"`. The step's reason and the response are printed; it is a real bug in `invoicer`'s send path, so it stays red and gets fixed. If the service had been down, the journey would have been VOID, not FAIL. (SOP 11.)
+
+**7. The edge cases (an hour).** A second customer signs up inside a journey and tries to open, list and delete the first customer's invoice: refused every time, and the invoice survives. A customer double-submits a form (a misstep) and gets one invoice, not two. Reusable pieces ("sign in", "create an invoice") move into `fragments/` so each journey stays short. (SOPs 09, 10.)
+
+**8. CI (twenty minutes).** One job: `uj run --target staging --env environment.staging.json --strict --junit results/uj-junit.xml --ctrf results/uj-ctrf.json` (staging has sign-up off, so its setup logs in a QA account; the script in SOP 12 wraps it). Exit `1` blocks the merge (a real failure); exit `2` pages the environment owner (staging is down), not the developer. `ACME_QA_PASSWORD` comes from the CI secret store. Pull requests run only the journeys they changed (`--changed-base origin/main`). (SOP 12.)
+
+**9. The manager's view (five minutes).** `uj explain journeys/` prints every journey as a plain story; `uj coverage` shows which registered risks are covered and which still have no journey. Maya pastes both into the release notes, and records in `.uj/decisions.md` why one P2 risk is accepted for now. (SOP 13.)
+
+**10. A month later.** Dev is in another repo and cannot remember where the invoicer tests live: `uj projects` lists them with the last result, and `uj where --project invoicer` shows the target, the last run and the open gaps. The API renames `amount` to `total`. Two journeys fail on that field; Dev updates them in the same pull request as the rename. `uj contract --parity https://invoicer.staging.acme.example/openapi.json --spec openapi.json` shows the documentation changed too. A journey that flickers between PASS and FAIL shows up in `uj history --flaky` and is fixed rather than retried. (SOPs 14, 15.)
+
+**In short, for Acme:** one install, one `uj init`, a setup that gives each journey a fresh customer, four realistic journeys written in an afternoon by a PM and an engineer together, and a CI job that tells "the product broke" from "staging broke".
+
+**Next:** SOP 03, install, update and where things live.

@@ -1,0 +1,51 @@
+{
+  "name": "ally",
+  "bot": "authmesh",
+  "owner": "ab0t",
+  "repo": "github.com/ab0t-com/bots",
+  "install": "curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/authmesh/install.sh | sh",
+  "agent": "agent.md",
+  "routing_skill": "ally-mesh-client",
+  "tools": ["authsetup"],
+  "for": "put a service on the ab0t auth mesh: sign-in for its customers, permissions, a branded login page, drop-in widgets, users and teams, backend and consumer keys, connections to other services",
+  "sops": [
+    "00_index.md",
+    "01_sop_system_scope_model_for_clients.md",
+    "02_sop_system_day_zero_new_customer.md",
+    "03_sop_system_install_sign_in_environments.md",
+    "04_sop_system_describe_your_service.md",
+    "05_sop_system_check_and_first_run.md",
+    "06_sop_system_wire_it_into_your_app.md",
+    "07_sop_system_hosted_login_and_branding.md",
+    "08_sop_system_js_widgets.md",
+    "09_sop_system_your_users.md",
+    "10_sop_system_your_team_and_platform_permissions.md",
+    "11_sop_system_using_other_services.md",
+    "12_sop_system_opening_your_service_to_others.md",
+    "13_sop_system_changing_things_safely.md",
+    "14_sop_system_keys_rotate_offboard_disconnect.md",
+    "15_sop_system_migrations_and_upgrades.md",
+    "16_sop_system_troubleshooting_and_recovery.md",
+    "17_sop_system_security_rules.md"
+  ],
+  "hands_off_to": [
+    { "bot": "billing-quota", "for": "metering usage, tiers, charging customers" },
+    { "bot": "authz", "for": "modelling who may do what inside the client's own app (relationships)" }
+  ],
+  "answers": [
+    "which environment am I pointed at, and is it prod",
+    "is the billing or payment consumer key for service X live on env Y, and which tier does it hold",
+    "which credentials file holds the client id / org slug / service key for service X on env Y (path and field, never the value)",
+    "what does authsetup run step NN create and where",
+    "why does authsetup say <message>",
+    "does my installed authsetup match the version these SOPs describe (VERSION)",
+    "who holds which of my service's platform permissions"
+  ],
+  "version_file": "VERSION",
+  "dangerous_defaults": [
+    "authsetup targets prod when no --env is given (except up, which asks)",
+    "a NEXT line printed when no target was chosen has no --env; pasted as is, it targets prod",
+    "the default credentials directory ~/.authmesh/<service>/ holds every environment, prod included"
+  ],
+  "verified_against": { "authsetup": "0.5.24 (help, source, migration kit v0.5.23-to-v0.5.24)", "auth-sdk-go": "v0.12.1", "ab0t-auth": "0.1.4", "date": "2026-10-16" }
+}

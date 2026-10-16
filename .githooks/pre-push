@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#
+# Pre-push secret scan for ab0t-com/bots (public repo).
+# Scans every commit about to be pushed (belt and braces for a commit made with --no-verify).
+#
+# Enable once per clone (in the bots repo itself — never in a parent monorepo):
+#     git config core.hooksPath .githooks
+#
+set -euo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "⚠  gitleaks not installed — pre-push secret scan SKIPPED (https://github.com/gitleaks/gitleaks#installing)."
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+ZERO="0000000000000000000000000000000000000000"
+status=0
+
+# stdin: <local ref> <local sha> <remote ref> <remote sha>
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  [ "$local_sha" = "$ZERO" ] && continue                       # branch delete: nothing to scan
+  if [ "$remote_sha" = "$ZERO" ]; then range="$local_sha"       # new branch: scan its full history
+  else range="${remote_sha}..${local_sha}"; fi
+  if ! gitleaks git --no-banner --redact --config "${REPO_ROOT}/.gitleaks.toml" \
+       --log-opts="$range" "$REPO_ROOT"; then
+    status=1
+  fi
+done
+
+if [ "$status" -ne 0 ]; then
+  echo
+  echo "✖ gitleaks found a potential secret in the commits being pushed — push blocked."
+  echo "  Remove it from history (and rotate the key) before pushing."
+fi
+exit "$status"

@@ -1,0 +1,36 @@
+{
+  "name": "meta",
+  "bot": "meta",
+  "owner": "ab0t",
+  "repo": "github.com/ab0t-com/bots",
+  "install": "curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/meta/install.sh | sh",
+  "agent": "agent.md",
+  "routing_skill": "meta-bot-builder",
+  "tools": ["the bot contract", "sop-aligned-agent-system", "make-agent", "skill-creator", "sop-creator", "sh -n", "grep"],
+  "for": "build, change, verify, ship and maintain client-facing bots like these; investigate a product (CLI, API spec, config, errors, env, tests, SDK) into a fact sheet and SOPs; help a business on the mesh publish a bot for its own service",
+  "sops": [
+    "00_index.md",
+    "01_sop_system_what_a_bot_is.md",
+    "02_sop_system_build_a_new_bot.md",
+    "03_sop_system_keep_bots_honest.md",
+    "04_sop_system_add_or_change_an_sop.md",
+    "05_sop_system_verify_and_ship_a_bot.md",
+    "06_sop_system_publish_your_own_bot.md",
+    "07_sop_system_investigate_a_product.md",
+    "08_sop_system_bots_working_together.md"
+  ],
+  "hands_off_to": [
+    { "bot": "authmesh", "for": "using the auth mesh (Ally)" },
+    { "bot": "billing-quota", "for": "metering and charging (Penny)" },
+    { "bot": "authz", "for": "relationship modelling (Zee)" },
+    { "bot": "uj", "for": "user-journey testing of a service (Quinn)" }
+  ],
+  "answers": [
+    "which bots exist, what each covers, and what each hands off (from every bot.json)",
+    "does this folder pass the bot contract (SOP 05 gate)",
+    "where do the facts for an SOP come from for product X (SOP 07)",
+    "which bots are wanted next and which future services an agent-OS mesh will need (BOTS_WANTED.md)"
+  ],
+  "dangerous_defaults": [],
+  "verified_against": { "shipped bots": "authmesh, billing-quota, authz, uj; the root and per-bot install.sh as of 2026-10-16", "date": "2026-10-16" }
+}

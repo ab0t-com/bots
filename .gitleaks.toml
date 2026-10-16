@@ -1,0 +1,24 @@
+# gitleaks config for ab0t-com/bots (public repo).
+# Extends the default ruleset; allowlists only obviously-fake example values used in SOPs and skills,
+# so real secrets are still caught everywhere (no path is allowlisted wholesale).
+title = "ab0t-com/bots"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Example values in docs are not secrets; real keys are NEVER committed."
+# Match the regexes below against the detected SECRET only (not the whole line), so a "..." elsewhere
+# on a line never hides a real key.
+regexTarget = "secret"
+regexes = [
+  # ab0t keys written as obvious examples
+  '''ab0t_sk_(live|test)_(TEST|TESTKEY|FAKE|EXAMPLE|DUMMY|PLACEHOLDER|SAMPLE|REDACTED|ENV|LOG|ABC|XXX|x{4})[A-Za-z0-9_.…]*''',
+  # Truncated examples ("ab0t_sk_live_...", "eyJhbG...") — a real secret never contains a literal "..." or "…"
+  '''\.\.\.''',
+  '''…''',
+]
+# A finding whose secret contains one of these words is treated as an example value.
+stopwords = [
+  "example", "placeholder", "redacted", "your-", "your_", "<your", "xxxx", "changeme", "replace_me", "dummy", "fake",
+]

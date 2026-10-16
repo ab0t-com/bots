@@ -1,0 +1,65 @@
+# ab0t-com/bots — keep internal notes, credentials and local state out of the public repo.
+
+# Internal tickets, work logs and planning notes (never published)
+tickets/
+**/tickets/
+tasklist_*.md
+**/tasklist_*.md
+work_log*.md
+**/work_log*.md
+WORKLOG.md
+**/WORKLOG.md
+init.md
+**/init.md
+_source_material/
+**/_source_material/
+self_reflection.md
+**/self_reflection.md
+__self_improvement*
+**/__self_improvement*
+LEARNINGS.md
+**/LEARNINGS.md
+
+# Material moved out of the published tree before release (never published)
+.archive_unpublished_*/
+.archive/
+**/.archive/
+
+# Credentials and secrets — never committed
+.env
+.env.*
+*.env
+**/credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*.prod.json
+*.dev.json
+*.local.json
+*secret*
+!**/*secret*.md
+*token*.json
+.authmesh/
+.ab0t/
+
+# Local scratch / build output
+.scratch/
+tmp/
+*.tmp
+*.bak
+*.bak.*
+*.log
+*.swp
+*~
+
+# OS / editor / language noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+node_modules/

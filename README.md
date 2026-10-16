@@ -37,7 +37,16 @@ order, finds the step that did not happen, and says exactly who fixes it and how
 curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/authmesh/install.sh | sh        # Ally
 curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/billing-quota/install.sh | sh   # Penny
 ```
-Then open Claude Code and say what you want: "put my service on the mesh", "add a free and pro tier".
-Or just read: [`index.md`](index.md).
+Or several at once: `curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/install.sh | sh -s -- authmesh billing-quota`
+(`sh -s -- all` for every bot; [`index.md`](index.md) lists them). Then open Claude Code and say what
+you want: "put my service on the mesh", "add a free and pro tier". Or just read: [`index.md`](index.md).
 
-*ab0t · platform-team@ab0t.com*
+The installers only download this repository's folders and link them into `~/.claude`; they talk
+to no ab0t service and read no credentials. Skill folders you already have are never deleted.
+
+## Licence
+
+MIT ([`LICENSE`](LICENSE)). A few files are adapted from third-party works and keep their own
+licences (a skill's `license:` field says so); see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+*ab0t · questions and support: platform-team@ab0t.com*

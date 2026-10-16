@@ -1,0 +1,24 @@
+{
+  "name": "zee",
+  "bot": "authz",
+  "owner": "ab0t",
+  "repo": "github.com/ab0t-com/bots",
+  "install": "curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/authz/install.sh | sh",
+  "agent": "agent.md",
+  "routing_skill": "zzb",
+  "tools": ["zzb"],
+  "for": "model who may do what inside the client's own app (owners, editors, viewers, inherited access, separation of duties) as a relationship-based model on the ab0t auth service, audit it, and preview who gains and loses before any change",
+  "sops": [],
+  "sops_note": "Zee predates the SOP method; its procedure lives in the six zzb skills. Client SOPs and GAPS.md are the next job for this folder.",
+  "hands_off_to": [
+    { "bot": "authmesh", "for": "sign-in, the mesh permission names, keys, environments (zzb apply / init --with-tenancy can drive authsetup)" },
+    { "bot": "billing-quota", "for": "metering and charging" }
+  ],
+  "answers": [
+    "can user X do Y on object Z, and why (the grant path)",
+    "who can access object Z with permission P",
+    "does this model have wildcard over-grants, dark permissions, or self-approval paths (zzb audit)"
+  ],
+  "dangerous_defaults": ["zzb targets https://auth.service.ab0t.com (prod) unless --url or ~/.zzb/config.json says otherwise"],
+  "verified_against": { "zzb skills": "as shipped in ~/.claude/skills on 2026-10-03", "date": "2026-10-03" }
+}

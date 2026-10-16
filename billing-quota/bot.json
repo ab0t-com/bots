@@ -1,0 +1,51 @@
+{
+  "name": "penny",
+  "bot": "billing-quota",
+  "owner": "ab0t",
+  "repo": "github.com/ab0t-com/bots",
+  "install": "curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/billing-quota/install.sh | sh",
+  "agent": "agent.md",
+  "routing_skill": "penny-billing-quota",
+  "tools": ["quotactl", "ab0t-quota-go", "ab0t-quota", "billing API", "payment API", "authsetup connect (via Ally)"],
+  "for": "meter what a service's customers use, enforce free/paid tier limits, and charge them: quota-config.json, the quota middleware, billing (ledger) and payment (Stripe plans, checkout, portal, subscriptions)",
+  "sops": [
+    "00_index.md",
+    "01_sop_system_money_model_for_clients.md",
+    "02_sop_system_day_zero_acme_meters_invoicer.md",
+    "03_sop_system_get_your_keys.md",
+    "04_sop_system_describe_tiers_and_resources.md",
+    "05_sop_system_wire_the_library.md",
+    "06_sop_system_shadow_run_then_enforce.md",
+    "07_sop_system_plans_prices_checkout_portal.md",
+    "08_sop_system_subscriptions_webhooks_tier_sync.md",
+    "09_sop_system_tiers_and_upgrades.md",
+    "10_sop_system_credits_grants_auth_events.md",
+    "11_sop_system_metering_money_with_billing.md",
+    "12_sop_system_multi_tenant_correctness.md",
+    "13_sop_system_observability_alerts_reconciliation.md",
+    "14_sop_system_changing_things_safely.md",
+    "15_sop_system_keys_and_offboarding.md",
+    "16_sop_system_migrations_and_upgrades.md",
+    "17_sop_system_troubleshooting.md",
+    "18_sop_system_security_and_money_rules.md"
+  ],
+  "hands_off_to": [
+    { "bot": "authmesh", "for": "installing authsetup, environments, minting/rotating billing and payment keys, authsetup errors" },
+    { "bot": "authz", "for": "relationship-based access inside the client's app" }
+  ],
+  "answers": [
+    "does service X meter usage, and which billing/payment write permissions should it ask the provider for",
+    "what tier is customer org Y on according to billing, and what limits does the quota config give that tier",
+    "is the quota library enforcing or in shadow on this deployment (from quotactl capabilities, with consent)",
+    "what does billing/payment/quota message <message> mean and what is the fix",
+    "which idempotency key does this money write need"
+  ],
+  "dangerous_defaults": [
+    "authsetup targets prod when no --env is given",
+    "enforcement.enabled absent means every request is allowed",
+    "quotactl capabilities and doctor connect to Redis and may create declared DynamoDB tables",
+    "setting AB0T_QUOTA_BILLING_URL turns paid mode on: Setup refuses to start without a durable outbox unless outbox.allow_ephemeral is true",
+    "the auth-event receiver answers 404 unless mounted with http.StripPrefix"
+  ],
+  "verified_against": { "ab0t-quota-go": "v0.1.9", "ab0t-quota": "0.6.7", "billing": "source 2026-10-16", "payment": "source 2026-10-16", "date": "2026-10-16" }
+}

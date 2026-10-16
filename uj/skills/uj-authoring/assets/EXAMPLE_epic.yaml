@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=./journey.schema.json
+# (create that schema file next to this one with: uj schema journey > journey.schema.json)
+# A complete, lint-clean epic (uj 0.1.1): functional happy-path + a security abuse step + cleanup.
+# Read top-to-bottom as a story; the mechanics are the detail under each intent.
+id: TEAM_INVITE_LIFECYCLE
+kind: epic
+conflicts: tenant                     # what this epic serialises on (JL007)
+success: "an owner can invite a teammate, the teammate can accept, and an outsider is refused"
+
+vars:
+  invitee: "teammate-{rand}@example.test"
+
+steps:
+  - intent: owner invites a teammate by email
+    method: POST
+    path:   /organizations/{org}/invitations
+    bearer: "{token}"
+    body:   { email: "{invitee}", role: member }
+    capture: { invite_id: $.invitation_id }        # state flows forward
+    expect:                                        # assert MORE than status (JL004)
+      status: 200
+      schema:
+        required: [invitation_id, status]
+        properties:
+          invitation_id: { type: string }
+          status:        { type: string }
+
+  - intent: an outsider must NOT be able to read this invitation
+    abuse:  cross-tenant read of another org's invitation
+    method: GET
+    path:   /organizations/{org}/invitations/{invite_id}
+    bearer: "none"
+    expect: denied                                 # must be refused (4xx)
+
+  - intent: the invited teammate accepts (uses the id captured in step 1)
+    method: POST
+    path:   /invitations/{invite_id}/accept
+    body:   { email: "{invitee}" }
+    expect: { status: 200, fields: [member_id] }
+
+finally:
+  - intent: remove the invitation (teardown, always runs)
+    method: DELETE
+    path:   /organizations/{org}/invitations/{invite_id}
+    bearer: "{token}"
+    expect: success

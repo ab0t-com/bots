@@ -1,0 +1,68 @@
+{
+  "name": "quinn",
+  "bot": "uj",
+  "owner": "ab0t",
+  "repo": "github.com/ab0t-com/bots",
+  "install": "curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/uj/install.sh | sh",
+  "agent": "agent.md",
+  "routing_skill": "quinn-uj",
+  "tools": [
+    "uj"
+  ],
+  "for": "test any HTTP service the way real users use it: readable user-journey files (realistic sessions, edge cases, abuse, isolation), end-to-end and API checks, honest PASS/FAIL/VOID verdicts, CI, managing many suites, OpenAPI drift — with the uj tool, remembering each project's product, risks and decisions in its .uj/ folder",
+  "sops": [
+    "00_index.md",
+    "01_sop_system_testing_model_for_clients.md",
+    "02_sop_system_day_zero_acme_tests_invoicer.md",
+    "03_sop_system_install_update_and_where_things_live.md",
+    "04_sop_system_start_a_project_and_targets.md",
+    "05_sop_system_describe_setup_environment.md",
+    "06_sop_system_choose_what_to_test.md",
+    "07_sop_system_write_a_user_journey.md",
+    "08_sop_system_assertions_that_catch_bugs.md",
+    "09_sop_system_realistic_sessions_and_edge_cases.md",
+    "10_sop_system_end_to_end_across_services_and_ui.md",
+    "11_sop_system_run_read_verdicts_and_debug.md",
+    "12_sop_system_ci_and_team_workflow.md",
+    "13_sop_system_manage_many_projects_and_suites.md",
+    "14_sop_system_edit_and_maintain_journeys.md",
+    "15_sop_system_api_contract_and_drift.md",
+    "16_sop_system_load_and_performance.md",
+    "17_sop_system_everything_else_uj_can_do.md",
+    "18_sop_system_troubleshooting.md",
+    "19_sop_system_rules_for_honest_tests.md"
+  ],
+  "hands_off_to": [
+    {
+      "bot": "authmesh",
+      "for": "putting the service under test on the ab0t mesh: sign-in, keys, hosted login"
+    },
+    {
+      "bot": "billing-quota",
+      "for": "tiers, metering and charging (testing them is Quinn's; configuring them is Penny's)"
+    },
+    {
+      "bot": "authz",
+      "for": "modelling in-app permissions (Quinn tests that they hold)"
+    }
+  ],
+  "answers": [
+    "where are project Y's tests, what do they target, and how did the last run go (uj where / uj projects)",
+    "which registered risks in project Y have no journey yet (uj coverage gaps)",
+    "is there a journey covering risk X in project Y, and which (uj coverage)",
+    "what does the suite in project Y test, as plain stories (uj explain)",
+    "which target URL will a uj run in project Y hit, and where does it come from",
+    "what does uj message <message> mean and what is the fix",
+    "is journey Z flaky against target T (uj history --flaky)"
+  ],
+  "dangerous_defaults": [
+    "journeys create real data on the target (sign-ups, records): never point a target at production",
+    "run: steps execute shell commands on the machine running uj",
+    "uj load and uj probe were built for one specific benchmark and default to local ports and an admin login; not for a customer's service",
+    "--parallel runs journeys at the same time: journeys that change shared state need conflicts: global:<name>"
+  ],
+  "verified_against": {
+    "uj": "0.1.1-public",
+    "date": "2026-10-16"
+  }
+}
