@@ -13,7 +13,7 @@ authsetup version
 ```
 The installer checks the published sha256 before it writes anything, installs to `/usr/local/bin/authsetup` (to install elsewhere, set the variable for `sh`: `curl -fsSL …/install.sh | PREFIX=$HOME/.local sh`), and keeps the previous binary as `authsetup.previous` so you can roll back. It is safe to re-run.
 
-These SOPs are checked against **`authsetup 0.5.24`** (the `VERSION` file next to them). If `authsetup version` prints something older, update first: `authsetup update --check`, then `authsetup update` (SOP 15). Older binaries print different messages from the ones SOP 16 quotes, and before 0.5.24 a NEXT line could drop your environment.
+These SOPs are checked against **`authsetup 0.5.25`** (the `VERSION` file next to them). If `authsetup version` prints something older, update first: `authsetup update --check`, then `authsetup update` (SOP 15). Older binaries print different messages from the ones SOP 16 quotes, and before 0.5.24 a NEXT line could drop your environment.
 
 **2. Know which environment you are talking to.**
 ```sh
@@ -50,10 +50,11 @@ If you own several services, pick one with `--as invoicer`. If `info` shows `sel
 
 **6. Give your AI assistant the same knowledge.**
 ```sh
+authsetup bot install          # Ally herself: the agent, these SOPs and her skills (offline, matches your authsetup)
+authsetup skills install       # the bundled client skills on their own (authsetup-cli and the rest)
 authsetup skills list
-authsetup skills install
 ```
-This copies the bundled `authsetup-cli` skill into `~/.claude/skills/`. Ally (the agent in this folder) reads the SOPs here; installing the bundled skill as well is a good idea. Restart the assistant afterwards so it loads the skill.
+`bot install` (from 0.5.25) puts Ally in `~/.ab0t/bots/authmesh/` and links her agent and skills into `~/.claude/`, the same layout as the bots installer; `--project` does it for one repository (`./.claude/`). `skills install` copies the bundled skills into `~/.claude/skills/`. Restart the assistant afterwards so it loads them. `authsetup bot status` tells you later whether Ally still matches your `authsetup`.
 
 **7. Check your situation any time.**
 ```sh

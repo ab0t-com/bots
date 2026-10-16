@@ -22,3 +22,16 @@ regexes = [
 stopwords = [
   "example", "placeholder", "redacted", "your-", "your_", "<your", "xxxx", "changeme", "replace_me", "dummy", "fake",
 ]
+
+# ── Guard: service-admin password DERIVED from a public identifier ───────────────
+# Ticket auth/output/tickets/20261016_service_admin_passwords_derived_and_public (CRITICAL):
+# legacy registration scripts set the service-admin password to <ServiceName>Admin<year>!Secure,
+# the derivation was published, and such a password worked in production. Any occurrence of the
+# pattern (script, doc, example) is a finding; generate a random password and save it to the
+# 0600 credentials file instead. Matches only the fixed suffix, so a placeholder allowlist
+# (<...>, {VAR}) can never hide a templated derivation.
+[[rules]]
+id = "ab0t-derived-service-admin-password"
+description = "Service-admin password derived from the service name (<Name>Admin20NN!Secure) is guessable"
+regex = '''(?i)admin20[0-9]{2}!secure'''
+keywords = ["admin20"]

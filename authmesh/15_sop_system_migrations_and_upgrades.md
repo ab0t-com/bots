@@ -19,7 +19,7 @@ authsetup update --check          # is there a newer release? downloads nothing
 authsetup update                  # download, verify sha256, swap in place; old binary kept as <path>.previous
 authsetup version
 ```
-`update` talks only to the public release repository on GitHub, never to the auth service, and needs no config or credentials. `authsetup --env dev doctor` also tells you when a newer version exists. Roll back with the printed one-liner: `mv -f /usr/local/bin/authsetup.previous /usr/local/bin/authsetup`. Your `config/` and `~/.authmesh/` are untouched by an update; the tool reads older credential files as they are. Ally's pages are checked against the version in their `VERSION` file (0.5.24); refresh Ally after a big jump (re-run its installer).
+`update` talks only to the public release repository on GitHub, never to the auth service, and needs no config or credentials. `authsetup --env dev doctor` also tells you when a newer version exists. Roll back with the printed one-liner: `mv -f /usr/local/bin/authsetup.previous /usr/local/bin/authsetup`. Your `config/` and `~/.authmesh/` are untouched by an update; the tool reads older credential files as they are. Ally's pages are checked against the version in their `VERSION` file (0.5.25); after an update, refresh Ally with `authsetup bot install` (from 0.5.25 `update` prints that line for you when your Ally is older).
 
 **Then check what drives `authsetup`.** People rarely need to change anything; scripts, CI jobs and agents that *read authsetup's words* might. The kits for `authsetup` live in `github.com/ab0t-com/clientsetup`, folder `migrations/`:
 ```sh

@@ -21,15 +21,15 @@ Exit `0` = no offenders, `1` = offenders (each printed as `file:line: authsetup 
 binary is missing or is not `authsetup`.
 
 **Rules it applies.**
-- A command must be in the binary's own command list; a sub-command of `skills`, `connection` or
-  `snippet` must appear in that command's `--help`.
+- A command must be in the binary's own command list; a sub-command of `skills`, `connection`,
+  `snippet` or `bot` must appear in that command's `--help`.
 - A flag must be a global flag (`authsetup --help`, KEY FLAGS), or be named in `authsetup <cmd> --help`,
   or be described for that command in the binary's flag table.
 - A command the binary does not have is allowed only when `GAPS.md` names it: that is how **Coming** verbs
   (`authsetup login`, `authsetup rotate-key` …) stay honest. Mark an unbuilt verb Coming *and* add a
   `GAPS.md` row, or the lint fails.
 - `REQUIRE_TARGET=1` additionally fails a command in a code block that depends on the environment but has
-  no `--env` / `--base-url` (`validate`, `init`, `update`, `skills`, `version`, `accounts`, `env`,
+  no `--env` / `--base-url` (`validate`, `init`, `update`, `skills`, `bot`, `version`, `accounts`, `env`,
   `use-env`, `help` and `--help` are exempt). Inline mentions of a command by name are not checked for this.
 - Skipped on purpose: placeholders (`authsetup <command> --help`, `authsetup …`), version strings
   (`authsetup 0.5.24`), and "authsetup" in the middle of a sentence inside a quoted message.
@@ -41,6 +41,7 @@ by hand when a release rewords output.
 **Results recorded for this folder (2026-10-16).**
 | binary | result |
 |---|---|
+| `authsetup 0.5.25` | Ally's pages: 243 commands checked, 24 Coming verbs (all in `GAPS.md`), **0 offenders**, also with `REQUIRE_TARGET=1`; `ALL_SKILLS=1 REQUIRE_TARGET=1`: 399 commands, 0 offenders. `bot` added to the sub-command and local-only lists. A fixture with `bot frob` / `bot install --projectx` → 2 offenders. The same pages against 0.5.24 → 12 offenders (`bot` is unknown there): the check goes red on a binary without the verbs the pages show |
 | `authsetup 0.5.24` | Ally's pages: 229 commands checked, 24 Coming verbs (all in `GAPS.md`), **0 offenders**. `ALL_SKILLS=1` (every skill under `skills/`): 385 commands, 0 offenders, also with `REQUIRE_TARGET=1` |
 | `authsetup 0.5.23` | 0 offenders (0.5.24 changed messages and behaviour, not the command surface) |
 | `authsetup 0.5.17` | 70 offenders (no `up`, `settings`, `login-url`, `connection`, `grant-platform` …): the check does go red on a stale binary |

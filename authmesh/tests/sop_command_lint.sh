@@ -8,7 +8,7 @@
 #   `inline code` in the SOPs, agent.md, the ally-mesh-client skill and the bundled
 #   authsetup-cli skill) and checks, against a real binary's own help text:
 #     1. the command exists            (the binary's "unknown command … try: …" list)
-#     2. a sub-command exists          (skills / connection / snippet: listed in `<cmd> --help`)
+#     2. a sub-command exists          (skills / connection / snippet / bot: listed in `<cmd> --help`)
 #     3. every flag exists for it      (a global flag from `authsetup --help` KEY FLAGS, or
 #                                       named in `authsetup <cmd> --help`, or the binary's flag
 #                                       table says the flag is for that command)
@@ -178,9 +178,9 @@ fi
 
 # ----- check -------------------------------------------------------------------
 offenders=0; checked=0; coming_seen=0
-SUBCMD_CMDS=" skills connection snippet "
+SUBCMD_CMDS=" skills connection snippet bot "
 # commands that never read an environment (no server, no per-env credentials)
-LOCAL_ONLY_CMDS=" validate init update skills version accounts env use-env help "
+LOCAL_ONLY_CMDS=" validate init update skills bot version accounts env use-env help "
 
 for f in "${files[@]}"; do
   [ -f "$f" ] || { echo "warning: no such file: $f" >&2; continue; }

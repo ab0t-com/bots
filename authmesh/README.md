@@ -8,7 +8,7 @@ This folder is a complete, client-facing system for using the ab0t auth mesh thr
 - `skills/ally-mesh-client/SKILL.md` — the skill Ally loads; it routes to the SOPs.
   The other folders under `skills/` are the companion skills Ally may load by name (copied here so
   the bot stands alone; `authsetup-cli` is the one the binary itself bundles).
-- `VERSION` — the `authsetup` version these pages were checked against (`authsetup_version: 0.5.24`).
+- `VERSION` — the `authsetup` version these pages were checked against (`authsetup_version: 0.5.25`).
 - `bot.json` — the manifest (jobs, SOPs, hand-offs, dangerous defaults, `verified_against`).
 - `install.sh` — installs Ally into Claude Code (downloads this folder, symlinks agent + skills).
 - `GAPS.md` — every **Coming** item across the SOPs; the `authsetup` spec list.
@@ -16,6 +16,15 @@ This folder is a complete, client-facing system for using the ab0t auth mesh thr
 
 ## Install Ally
 
+Already have `authsetup` 0.5.25 or later? It carries the matching Ally — no download:
+```sh
+authsetup bot install              # offline; the Ally that matches your authsetup version
+authsetup bot status               # later: same version? anything changed?
+```
+(`--project` installs into the current repository's `./.claude/` instead; `--dry-run` shows what it would do;
+`authsetup bot uninstall` removes only what it installed.) It lays Ally out exactly like the installer below.
+
+Without `authsetup`:
 ```sh
 curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/authmesh/install.sh | sh
 ```
@@ -30,8 +39,8 @@ Then start a new Claude Code session and say `@agent-ally`, or "set up auth for 
 "connect to billing", "my users get 403". Ally installs `authsetup` with you (SOP 03):
 ```sh
 curl -fsSL https://raw.githubusercontent.com/ab0t-com/clientsetup/main/install.sh | sh
-authsetup version                  # should match VERSION here (0.5.24); older → authsetup update
-authsetup skills install           # the bundled authsetup-cli skill, which Ally also uses
+authsetup version                  # should match VERSION here (0.5.25); older → authsetup update
+authsetup skills install           # the bundled client skills (authsetup-cli and the rest), which Ally also uses
 ```
 By hand instead: symlink `agent.md` to `~/.claude/agents/ally.md` (or `.claude/agents/ally.md` in one
 project) and `skills/ally-mesh-client` to `~/.claude/skills/ally-mesh-client`. The skill links to the
@@ -43,7 +52,7 @@ copy, copy the whole `authmesh/` folder somewhere stable and symlink from there.
 Ally's pages quote `authsetup`'s own messages, which change between releases. `VERSION` says which
 release they match. Ally runs `authsetup version` at the start of a session: an older binary is
 updated first (SOP 15), a newer one means these pages may lag (Ally then trusts `authsetup <cmd> --help`;
-re-run the installer to refresh Ally).
+`authsetup bot install` — or re-running the installer — refreshes Ally).
 
 ## What Ally will and will not do
 
@@ -57,8 +66,10 @@ re-run the installer to refresh Ally).
 
 ## Keeping it honest
 
-Every command, flag and message in the SOPs was checked against `authsetup` 0.5.24 (its `--help`, its
-source and its migration kit `migrations/v0.5.23-to-v0.5.24/` in `github.com/ab0t-com/clientsetup`).
+Every command, flag and message in the SOPs was checked against `authsetup` 0.5.25 (its `--help`, its
+source and its migration kits `migrations/v0.5.23-to-v0.5.24/` and `v0.5.24-to-v0.5.25/` in
+`github.com/ab0t-com/clientsetup`). From 0.5.25 the binary embeds this folder (`authsetup bot install`), so each
+release carries the Ally that matches it.
 `tests/sop_command_lint.sh <path-to-authsetup>` re-checks every command and flag mechanically; run it
 after each `authsetup` release. Where the tool does not do something yet, the SOP says **Coming** and
 gives today's workaround; `GAPS.md` collects them. When a gap ships, update the SOP, remove the row, and

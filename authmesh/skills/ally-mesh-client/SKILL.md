@@ -16,7 +16,7 @@ description: >-
   migration kits, bash kit → authsetup, auth-sdk-go via migrationbot, ab0t_auth),
   troubleshoot any authsetup message (schema name taken, no owner recorded, other-origin
   refusal, stale credentials, locks, 403/422/429, wiped DB), and apply the security rules.
-  Checked against authsetup 0.5.24 (the VERSION file beside the SOPs).
+  Checked against authsetup 0.5.25 (the VERSION file beside the SOPs).
   Triggers: "authsetup", "onboard to the ab0t mesh", "permissions.json", "hosted login",
   "auth widgets", "connect to billing", "rotate my service key", "my users get 403",
   "scope platform", "grant-platform", "migrate from the bash kit", "is taken",
@@ -28,7 +28,7 @@ description: >-
 Seventeen short SOPs, one per job, written for the people using the mesh. This file only
 routes; the SOPs are the references. Load the one for the job, follow it in order, and
 respect its **Coming** markers (approved but not built; each has a *Today:* workaround).
-They describe `authsetup` 0.5.24 (`../../VERSION`); check `authsetup version` first and
+They describe `authsetup` 0.5.25 (`../../VERSION`); check `authsetup version` first and
 update an older binary (SOP 15) before quoting messages from SOP 16.
 
 ## Non-negotiables (restated from the SOPs)
@@ -50,6 +50,9 @@ update an older binary (SOP 15) before quoting messages from SOP 16.
 - Unsure of a flag: `authsetup <command> --help`. Unsure of an id: `authsetup whois <id>`.
 
 ## The SOPs (relative to this file)
+The links below are relative to this file's real location in Ally's folder. This skill folder is usually a
+symlink, so if `../../00_index.md` does not open, resolve it first: the folder is `~/.ab0t/bots/authmesh/`
+(home install) or `./.claude/bots/authmesh/` (`authsetup bot install --project`).
 | job | file |
 |---|---|
 | map of everything | [../../00_index.md](../../00_index.md) |
@@ -74,7 +77,7 @@ update an older binary (SOP 15) before quoting messages from SOP 16.
 
 ## Companions (load by name when the SOP points there)
 Each is a short guide that links back to these SOPs.
-`authsetup-cli` (bundled in the binary: `authsetup skills install`; a 0.5.24 copy is in `../authsetup-cli/`) for the full flag matrix;
+`authsetup-cli` (bundled in the binary: `authsetup skills install`; the same copy is in `../authsetup-cli/`) for the full flag matrix;
 `auth-mesh-setup` for the day-one overview; `mesh-tenancy-authority` for who can act in which org;
 `hosted-login-setup` / `auth-hosted-login-org-config` for the login page and browser SDK;
 `authmesh-widgets` / `auth-widgets-discovery` for widget detail; `ab0t-auth-fastapi` for the

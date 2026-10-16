@@ -4,6 +4,7 @@
   "owner": "ab0t",
   "repo": "github.com/ab0t-com/bots",
   "install": "curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/authmesh/install.sh | sh",
+  "install_with_authsetup": "authsetup bot install",
   "agent": "agent.md",
   "routing_skill": "ally-mesh-client",
   "tools": ["authsetup"],
@@ -47,5 +48,5 @@
     "a NEXT line printed when no target was chosen has no --env; pasted as is, it targets prod",
     "the default credentials directory ~/.authmesh/<service>/ holds every environment, prod included"
   ],
-  "verified_against": { "authsetup": "0.5.24 (help, source, migration kit v0.5.23-to-v0.5.24)", "auth-sdk-go": "v0.12.1", "ab0t-auth": "0.1.4", "date": "2026-10-16" }
+  "verified_against": { "authsetup": "0.5.25 (help, source, migration kits v0.5.23-to-v0.5.24 and v0.5.24-to-v0.5.25; sop_command_lint 0 offenders)", "auth-sdk-go": "v0.12.1", "ab0t-auth": "0.1.4", "date": "2026-10-16" }
 }

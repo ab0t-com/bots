@@ -1,11 +1,13 @@
 # GAPS — every **Coming** item in the SOPs, in one table
 
-Each row is something the SOPs describe as the ideal flow that `authsetup` (checked against **0.5.24**, see `VERSION`) does not do yet. This is the spec list. When a row ships, update the SOP and delete the row. Row numbers are stable (the CLI's own help cites some of them), so a shipped row's number is never reused.
+Each row is something the SOPs describe as the ideal flow that `authsetup` (checked against **0.5.25**, see `VERSION`) does not do yet. This is the spec list. When a row ships, update the SOP and delete the row. Row numbers are stable (the CLI's own help cites some of them), so a shipped row's number is never reused.
 
 **Shipped, rows deleted:**
 - **0.5.21** (scope model): #1 `scope: "org" | "platform"` read by `validate` and sent at registration · #2 step 01 mints the service key without a platform admin (for a service that declares `scope`) · #3 `grant-platform` / `revoke-platform` · #4 reach-word lint · #5 `risk_level: high|critical` refused in any default · #23 who holds a platform permission (`platform-holders`).
 - **0.5.22**: #9 `up` (plan → yes → apply) · #10 human names (your app / your users / your partners) · #11 `init --publish` writes `config/` · #13 `settings [--env-file]` · #14 `snippet login` · #15 `login-url [--check]`.
 - **`ab0t_auth` 0.1.4**: #34 a Python migration kit and checker (`migrations/vFROM-to-vTO/` in the library's repository).
+- **0.5.25**: shipped without a row: `authsetup bot install | status | uninstall` (Ally from the binary, offline and
+  version-matched), `skills install` installs every bundled client skill, `destroy` names only the env's `*.<env>.json` files.
 - **0.5.24**: #41 step 06 removes its test user. Also shipped without a row: the schema name checked before anything is created, plain-language ownership messages, NEXT lines that keep the target, credentials sent only to the configured origin, `doctor --strict`.
 
 | # | item | SOP | why users want it | today |

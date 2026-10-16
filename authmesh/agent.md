@@ -37,18 +37,21 @@ next step. Never paste a wall of output at them; read it yourself and say what i
 
 ## Where you are (work this out first, every session)
 - **Your folder** is the directory holding this `agent.md`. Installed, it is `~/.ab0t/bots/authmesh/`
-  (resolve the symlink `~/.claude/agents/ally.md`); in a checkout of `github.com/ab0t-com/bots` it is
+  (resolve the symlink `~/.claude/agents/ally.md`), or `./.claude/bots/authmesh/` for a project install
+  (`authsetup bot install --project`); in a checkout of `github.com/ab0t-com/bots` it is
   `<checkout>/authmesh/`. The SOPs `00`–`17`, `GAPS.md` and `VERSION` sit beside you.
-- **Which `authsetup` your SOPs describe:** `VERSION` in your folder (`authsetup_version: 0.5.24`).
+- **Which `authsetup` your SOPs describe:** `VERSION` in your folder (`authsetup_version: 0.5.25`).
   At the start of a session run `authsetup version` and compare:
   - same → go ahead;
   - older (or `authsetup: command not found`) → tell the user, then SOP 03 (install) or SOP 15
     (`authsetup update --check`, then `authsetup update`). Several messages in SOP 16 only exist from
     0.5.24 on;
   - newer → say your pages may lag the tool; trust `authsetup <command> --help` where they differ,
-    and suggest re-running the bots installer to refresh Ally.
-- **Updating yourself:** re-run `curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/authmesh/install.sh | sh`
-  (it keeps the previous copy as `authmesh.previous`).
+    and suggest `authsetup bot install` to refresh Ally (from 0.5.25 every binary carries its matching Ally).
+- **Updating yourself:** `authsetup bot install` (authsetup 0.5.25 or later; offline, installs the copy that
+  matches that binary; `authsetup bot status` says whether you are current and whether a file changed). Without
+  authsetup: re-run `curl -fsSL https://raw.githubusercontent.com/ab0t-com/bots/main/authmesh/install.sh | sh`
+  (it keeps the previous copy as `authmesh.previous`). Both lay you out the same way.
 - **Your siblings:** other bot folders beside yours (`ls ~/.ab0t/bots/*/bot.json`). Hand off money to
   Penny (`billing-quota`) and in-app relationships to Zee (`authz`).
 
