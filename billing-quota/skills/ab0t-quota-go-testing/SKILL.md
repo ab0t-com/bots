@@ -7,7 +7,7 @@ description: >-
   and the nine-item acceptance list before enforcing. Use when writing tests for the quota library,
   generating signed webhook fixtures, building a pre-launch test plan, or debugging "test passes
   locally but not in staging", "webhook 401/404 in tests", "credit granted twice". The test file
-  below runs green against v0.1.9.
+  below runs green against v0.1.9 and v0.1.10.
 ---
 
 # Testing a quota integration
@@ -28,7 +28,7 @@ real Redis until the staging step.
 
 ## Do this (the default path)
 
-**1. Unit tests.** This file runs green against v0.1.9 (`go test ./...`). Note the two things tests
+**1. Unit tests.** This file runs green against v0.1.9 and v0.1.10 (`go test ./...`). Note the two things tests
 most often get wrong: `storage.redis_url` is required even in tests (declare `memory://`), and
 `AB0T_AUTH_WEBHOOK_SECRET` is read by `Setup`, so set it before calling `Setup`.
 ```go
@@ -174,7 +174,9 @@ BODY='{"event_type":"x.test","event_id":"e-'$RANDOM'"}'
 SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$SECRET" | sed 's/^.* //')
 curl -s -X POST "$SVC/api/quotas/_webhooks/auth" -H "X-Event-Signature: sha256=$SIG" -d "$BODY"   # {"event_type":"x.test","status":"ignored"}
 ```
-A `404` on the last two means the receiver is mounted without `http.StripPrefix`.
+A `404` on the last two means, on v0.1.9, the receiver is mounted at its full path without
+`http.StripPrefix`; on v0.1.10 (which answers any path ending in `/_webhooks/auth`), that the request
+never reaches it (check your mux).
 
 **3. A shadow day and 4. the acceptance list:** SOP 06 steps 1–4 (count `shadow_would_deny` per
 resource and tier, prove one real sign-up grants once, force one deny, rehearse the rollback).
@@ -191,9 +193,10 @@ real credit on whatever they point at.
 | test config without `storage.redis_url` | `ab0t-quota-go config error [QUOTA-CFG-001] …` from `Setup` | `config.Declare("memory://")` |
 | secret set after `Setup` | every test event `401` | `t.Setenv` before `Setup` |
 | two tests registering handlers | a test sees another's grants | `authevents.ClearHandlers()` per test |
-| posting to `/_webhooks/auth` through a mux mounted at the full path | `404 page not found` | `http.StripPrefix` as above |
+| v0.1.9: posting to `/_webhooks/auth` through a mux mounted at the full path | `404 page not found` | `http.StripPrefix` as above (works on both versions) |
+| a granter test that expects a paid tier's refill to grant on `org.created` | passes on v0.1.9, fails on v0.1.10 (only `trigger: "signup"` grants) | test the sign-up tier; refills come from payment |
 | `t.Context()` | does not compile before Go 1.24 | `context.Background()` |
-| reading the ledger with `quotactl events` | nothing (in-memory stub) | assert on your granter, or read through your service |
+| reading the ledger with `quotactl events` | nothing (v0.1.9 in-memory stub) / a refusal (v0.1.10) | assert on your granter, or `q.LedgerStore.QueryByUser` in the test |
 
 ## Check it worked
 

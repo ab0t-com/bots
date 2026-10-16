@@ -11,7 +11,7 @@
 "alerts": { "enabled": true, "webhook_url": "https://ops.acme.example/hooks/quota",
             "warning_threshold": 0.80, "critical_threshold": 0.95, "cooldown_seconds": 3600, "drift_sustained_threshold": 3 }
 ```
-The webhook body is `{level, resource, tier, used, limit, threshold, timestamp}`. The dispatcher refuses non-`http(s)` schemes and, by default, private/loopback/link-local targets (`webhook: scheme "file" rejected`, `webhook: URL required`, `webhook: bad URL: …`).
+The webhook body is `{level, resource, tier, used, limit, threshold, timestamp}`; v0.1.10 adds `org_id` and `reason` (nothing was removed, so a v0.1.9 consumer keeps working). The cooldown is per org on v0.1.10; on v0.1.9 it is per resource and tier, so one org's alert mutes the same alert for every other org on that tier for `cooldown_seconds`. The dispatcher refuses non-`http(s)` schemes and, by default, private/loopback/link-local targets (`webhook: scheme "file" rejected`, `webhook: URL required`, `webhook: bad URL: …`).
 
 **2. Surface capabilities in your health endpoint.** Call `q.Capabilities()` from `/healthz` and expose `Enforcement`, `ShadowMode`, `Billing`, `Payment`, `CreditGrant`, `LedgerBackend`, `FloatStore`, `WhyOff`. Intentional degradation (billing off in dev) and accidental degradation (token missing in prod) then look different on a dashboard.
 
@@ -39,11 +39,11 @@ Grades persistence, eviction facts, PITR by assertion, encryption in transit, an
 | `enforcement.enabled: false` | allow everything (`enforcement_disabled`) | stop | quota itself is misbehaving |
 | `enforcement.global_kill_switch: true` | **deny everything** (`429`, `Quota enforcement halted by global kill switch.`) | n/a | runaway cost, abuse, you must stop spend now |
 
-All three need a config change and a redeploy. Go v0.1.9 and Python v0.6.7 treat all three the same way; rehearse the one you would use before an incident.
+All three need a config change and a redeploy. Go v0.1.9, Go v0.1.10 and Python v0.6.7 treat all three the same way; rehearse the one you would use before an incident.
 
 ## What you'll see
 
-One INFO line at boot per capability (`ab0t-quota capabilities`), `WhyOff` entries such as `billing: AB0T_QUOTA_BILLING_URL not set`, `credit_grant: no CreditGranter supplied; default handler not registered`, `auth_events_signed: AB0T_AUTH_WEBHOOK_SECRET not set — receiver will reject all events with 401`. Alert webhooks arrive once per resource/tier per cooldown. A recalculate response: `{"org_id": …, "resources": {"invoicer.seats": {"counter_type": "gauge", "before": 5, "after": 3, "changed": true, "source": "provider", "status": "repaired"}}}`.
+One INFO line at boot per capability (`ab0t-quota capabilities`), `WhyOff` entries such as `billing: AB0T_QUOTA_BILLING_URL not set`, `credit_grant: no CreditGranter supplied; default handler not registered`, `auth_events_signed: AB0T_AUTH_WEBHOOK_SECRET not set — receiver will reject all events with 401`. On v0.1.10, a `quota config: …` WARN line per config value that fails open (SOP 04 step 6), also in `Capabilities.ConfigWarnings`. Alert webhooks arrive once per org, resource and tier per cooldown on v0.1.10 (once per resource and tier, across all orgs, on v0.1.9). A recalculate response: `{"org_id": …, "resources": {"invoicer.seats": {"counter_type": "gauge", "before": 5, "after": 3, "changed": true, "source": "provider", "status": "repaired"}}}`.
 
 ## If it goes wrong
 
@@ -59,8 +59,7 @@ One INFO line at boot per capability (`ab0t-quota capabilities`), `WhyOff` entri
 - **Flip shadow/enabled/kill switch without a redeploy.** *Today:* config + deploy.
 - **Alert dispatchers beyond one webhook** (Slack/PagerDuty/log). *Today:* one `webhook_url`; fan out on your side.
 - **A hosted usage/denials dashboard per org.** *Today:* your `OnDecision` logs.
-- **`quotactl events` reading the production ledger.** *Today:* in-memory stub; use your service's admin route.
-- **Payment's reconciliation items visible to you.** *Today:* ask the platform team.
+- **`quotactl events` reading the production ledger.** *Today:* the CLI cannot reach it (v0.1.10 refuses with a non-zero exit; v0.1.9 reads an empty in-memory stub); use `q.LedgerStore.QueryByUser` / `QueryByStatus` from your service's admin route.- **Payment's reconciliation items visible to you.** *Today:* ask the platform team.
 
 ## Next
 

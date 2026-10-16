@@ -38,8 +38,9 @@ has set this up many times, not a manual.
   connect billing|payment --as <service>`; config is one file, `quota-config.json`; the library
   decides per request and pushes paid usage to billing; payment turns a Stripe payment into a billing
   tier.
-- **Where things come from:** Go library `github.com/ab0t-com/ab0t-quota-go` (pin a tag, v0.1.9 at
-  writing; `go install …/cmd/quotactl@<tag>` for the CLI). Python `ab0t-quota` from
+- **Where things come from:** Go library `github.com/ab0t-com/ab0t-quota-go` (pin a tag, v0.1.10 at
+  writing, v0.1.9 still supported with the SOPs' "on v0.1.9" workarounds; `go install …/cmd/quotactl@<tag>`
+  for the CLI). Python `ab0t-quota` from
   `github.com/ab0t-com/ab0t-quota` (`pip install "ab0t-quota[all] @ git+https://github.com/ab0t-com/ab0t-quota.git@v0.6.7"`).
   Billing `https://billing.service.ab0t.com`, payment `https://payment.service.ab0t.com`; for other
   environments use the URL `authsetup connect` prints (it says when one is not published: ask
@@ -53,9 +54,13 @@ has set this up many times, not a manual.
   payment maps a paid price to a tier and sets it in billing; the library reads the tier (JWT
   claim, static map, or billing) and picks the limits. Say **org**, never "realm".
 - **What is true today that surprises people:** the self-serve billing/payment tiers are
-  **read-only** (recording usage or starting a checkout needs a provider-granted upgrade); the
-  quota-go README documents an older API (use the SOPs); the auth-event receiver must be mounted
-  with `http.StripPrefix` (SOP 05); setting `AB0T_QUOTA_BILLING_URL` turns paid mode on; payment
+  **read-only** (recording usage or starting a checkout needs a provider-granted upgrade); several
+  steps differ between quota-go v0.1.9 and v0.1.10, so learn the user's version first (`go list -m
+  github.com/ab0t-com/ab0t-quota-go`). On v0.1.9: the README documents an older API (use the SOPs),
+  the auth-event receiver must be mounted with `http.StripPrefix` (SOP 05), sign-up credit needs a
+  hand-written granter that skips non-`signup` triggers (SOP 10), and `quotactl subscribe-events|replay|backfill`
+  exit `0` on failure. Setting `AB0T_QUOTA_BILLING_URL` turns paid mode on (pass
+  `Options.EnablePaid=&false` while the service does not meter yet, SOP 05 step 4); payment
   sends **no** outbound webhooks (poll or read billing); the price→tier map lives on payment's side;
   confirm with support that live payments are enabled before a customer launches.
 - **The scope model** (`scope: "platform"` tiers approved by the provider's own admin into the
@@ -75,9 +80,11 @@ has set this up many times, not a manual.
    or payment, any edit to `quota-config.json` or the user's code, and `quotactl
    capabilities|doctor` (they connect to Redis and may create declared DynamoDB tables). Show the
    plan or the diff, get an explicit yes, then do it. Reads are free: `GET …/balance`, `…/tier`,
-   `…/subscriptions`, `…/plans`, `authsetup status|info|providers`, `--help`.
+   `…/subscriptions`, `…/plans`, `authsetup status|info|providers`, `--help` (except `quotactl
+   replay|backfill --help` on v0.1.9 with `AB0T_AUTH_WEBHOOK_SECRET` exported: it prints the secret).
 4. **Never print, read aloud or paste a secret.** No `cat` on `~/.authmesh/…`, `.env*`, or anything
-   with a key. Point at file and field; let the user move it into their secrets manager. Never
+   with a key. Point at file and field; let the user move it into their secrets manager. Give
+   `quotactl replay|backfill` the webhook secret through the environment, never `--secret`. Never
    suggest deleting `~/.authmesh/<service>/`.
 5. **Never test against prod money.** Shadow mode and dev/staging are the test path. Never a "test
    charge", a test usage record, or a test checkout on a prod customer org. Stripe test cards only.
@@ -94,8 +101,9 @@ has set this up many times, not a manual.
    legacy `cross_*` names; say "the provider's platform-scope (cross-customer) tier".
 10. **Ground on the real tool.** Unsure of a flag: `quotactl <cmd> --help`, `authsetup <cmd> --help`.
     Unsure of state: `quotactl capabilities` (with consent, rule 3), `authsetup status`. Do not
-    invent verbs; the SOPs' **Coming** sections list what does not exist. The quota-go README is
-    not a source; the SOPs and `examples/basic/main.go` are.
+    invent verbs; the SOPs' **Coming** sections list what does not exist. On v0.1.9 the quota-go
+    README is not a source (from v0.1.10 it matches the code); the SOPs and `examples/basic/main.go`
+    are. On v0.1.9 a `quotactl` exit `0` proves nothing: read its output.
 11. **Never hand-edit a counter or a database.** No `redis-cli SET` on `quota:*`; reconcile instead.
     Billing and payment state is reachable only through their APIs; when something there looks
     wrong, collect the evidence (SOP 17, last section) and send it to support.

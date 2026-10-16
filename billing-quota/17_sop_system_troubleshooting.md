@@ -21,9 +21,13 @@ Both `quotactl` commands connect to your declared stores (and would create decla
 | `quota: unsafe Redis counter store (eviction)` · `quota: Redis cannot run the counter's Lua scripts` · `quota: Redis below the supported version floor` · `quota: unsupported or unverifiable Redis topology` | Redis violates a gate | no eviction policy, allow scripting, Redis 7, single node; `quotactl provision --emit compose` for a conforming definition |
 | `REDIS TOPOLOGY UNSUPPORTED/UNVERIFIED (D-71) — refusing to start` | cluster or unverifiable | single node, or `storage.redis_cluster_confirmed_disabled: true` after you have checked |
 | `quota.Setup: storage.redis_key_prefix="x" is not permitted — …` | custom prefix | remove it |
-| `quota.Setup: enable_paid but the billing chain is SEVERED — <link>` | paid mode gate; setting `AB0T_QUOTA_BILLING_URL` turns paid mode on | fix the link (outbox store, `sns_topic_arn`, …), or `outbox.allow_ephemeral: true` (dev), or unset the billing URL until SOP 11 |
+| `quota.Setup: enable_paid but the billing chain is SEVERED — <link>` (v0.1.10 adds `Paid mode is on because …; … pass Options.EnablePaid=&false`) | paid mode gate; setting `AB0T_QUOTA_BILLING_URL` turns paid mode on | fix the link (outbox store, `sns_topic_arn`, …); not metering yet (limits and/or sign-up credit only): `Options.EnablePaid=&false` on both versions (SOP 05 step 4); `outbox.allow_ephemeral: true` is dev only and leaves `q.Healthy()` false |
+| `quota.Setup: CreditGranter is quota.BillingCreditGranter(nil) but billing is not wired — …` (v0.1.10) | built-in granter without `AB0T_QUOTA_BILLING_URL` | set `AB0T_QUOTA_BILLING_URL` and `AB0T_QUOTA_BILLING_TOKEN` (SOP 10 step 2) |
+| `quota config: …` WARN lines (v0.1.10; also `Capabilities.ConfigWarnings`) | a config value that fails open: enforcement off, a `reset_period` that never resets, a limit naming no resource, an unknown `billing_model` / `trigger` / `dedup` / `lifecycle` / `destination` | fix the named field (SOP 04); on v0.1.9 the same mistakes are silent |
+| `AB0T_QUOTA_CONFIG_PATH is set but IGNORED …` (v0.1.10) | wrong variable name, on both versions | rename it to `QUOTA_CONFIG_PATH` |
+| `handler-ledger table has no GSI1/GSI2 …` (v0.1.10) | a DynamoDB handler-ledger table created by v0.1.9; `QueryByUser` / `QueryByStatus` / `DeleteUser` fail with `ValidationException` | add the two indexes (SOP 15 step 5) |
 | `PREFLIGHT RE-VERIFICATION IS OFF (D-79)` and `q.Healthy()` false | counters on Redis, no reconciler loop | SOP 13 "If it goes wrong" |
-| `billing heartbeat failed` every minute | billing has no heartbeat route yet | harmless; ignore |
+| `billing heartbeat failed` every minute (v0.1.9) · one INFO `billing heartbeat: billing serves no heartbeat route — heartbeat stopped (harmless; nothing depends on it)` (v0.1.10) | billing has no heartbeat route | harmless; ignore |
 | `KEYSPACE BOOT GUARD refused to start (K-8, spec §3.3)` · `QUOTA-CFG-011` · `QUOTA-CFG-012` | keyspace step out of order | SOP 16 D |
 | `quota.Setup: tier provider: tier_provider.type unknown: "billing"` | typo | `jwt`, `static`, `mesh` |
 | `mesh provider: no Lookup wired (call SetLookup at startup)` | `mesh` without a lookup or `default_tier` | wire it or use `jwt` |
@@ -45,19 +49,25 @@ Both `quotactl` commands connect to your declared stores (and would create decla
 | `recount_fail_open` / `recount_source_unavailable_kept_deny` | truth provider unavailable during a deny | check the provider; gauges fail open, meters keep the deny |
 | no `X-Quota-*` headers | exempt path or `Router` returned `""` | expected |
 | `quota: idempotency key looks like a bare recyclable resource id …` | strict idempotency mode | use a unique key per operation |
+| `lifecycle_settle_RETRY` (paid mode, v0.1.10) | billing answered a settlement with `401`, `403` or a route `404` (rotated key, permission change, wrong base URL); the money event stays pending and is retried | fix the key or URL; the events then settle (on v0.1.9 these were voided) |
+| `lifecycle_event_VOIDED` / a void alert with `no_settlement_key` (paid mode, v0.1.10) | a money event carried no `reservation_id`, so it cannot be settled safely (v0.1.9 settled it under a blank key, and billing treated every later one as already seen) | emit lifecycle money events with their reservation id |
 
 ## Auth events / credit grants
 
 | you see | it means | do |
 |---|---|---|
 | `401 {"detail":"invalid signature"}` on every event | `AB0T_AUTH_WEBHOOK_SECRET` differs from the secret the subscription was created with, or the body was re-serialised | put the original secret back, or rotate by replacing the subscription (SOP 10 step 7); re-running `subscribe-events` does not change the secret |
-| `404 page not found` on every event | receiver mounted without `http.StripPrefix` | SOP 05 step 2 |
+| `404 page not found` on every event | v0.1.9: receiver mounted at its full path without `http.StripPrefix`; v0.1.10: the request reaches a path that does not end in `/_webhooks/auth` | SOP 05 step 2 (v0.1.9: use `http.StripPrefix`; v0.1.10: check the mux and `--prefix`) |
+| `405` / `413 {"detail":"body too large"}` (v0.1.10) | not a POST / body over 1 MiB | send POST; something other than auth is calling the receiver |
 | `200 {"status":"ignored"}` | no handler for that type | pass `CreditGranter` / register a handler |
+| ledger `skipped`, reason `credit_grant trigger is …, not signup: <tier>` (v0.1.10) | the tier's grant is not a sign-up grant (e.g. a monthly refill) | expected; on v0.1.9 such grants were handed out on join (SOP 10 step 1) |
 | `WhyOff credit_grant: no CreditGranter supplied; default handler not registered` | as it says | SOP 10 step 2 |
 | `auth-event auto-subscribe skipped: missing one of AB0T_AUTH_AUTH_URL, AB0T_AUTH_ADMIN_TOKEN, AB0T_AUTH_WEBHOOK_PUBLIC_URL, AB0T_AUTH_WEBHOOK_SECRET` | CLI or `AutoSubscribeAuthEvents` env | set all four |
-| `subscription_id:` printed empty, with `auth-event auto-subscribe: create failed err="HTTP 401: …"` | admin token expired or lacks `events.subscribe`/`events.read`; nothing registered (exit code is still `0`) | fresh token, re-run |
-| ledger `failed_permanent` with `billing promotional-credit: HTTP 403` (or your granter's own message) | billing refused your grant | key permissions (SOP 03 step 5); `404` means the granter posts to the wrong path (SOP 10 step 2) |
-| `quotactl events` shows nothing | standalone CLI reads an in-memory stub | inspect from inside your service |
+| v0.1.9: `subscription_id:` printed empty, with `auth-event auto-subscribe: create failed err="HTTP 401: …"` (exit code still `0`) · v0.1.10: non-zero exit naming `HTTP 401` (token rejected or expired) or `HTTP 403` (token lacks `events.read` / `events.subscribe` / `events.delete`) | admin token expired or lacks a permission; nothing registered | fresh token, re-run |
+| `subscribe-events`: `subscription … exists but …` naming `--rotate-secret` (v0.1.10) | the existing subscription listens to other events, is disabled, or signs with a different secret | `quotactl subscribe-events --rotate-secret` (SOP 10 step 7) |
+| ledger `failed_permanent` with `billing promotional-credit: HTTP 403` (or your granter's own message) | billing refused your grant | key permissions (SOP 03 step 5); `404` means the granter posts to the wrong path (SOP 10 step 2); after the fix re-send with `quotactl backfill` (`replay` of the same event is a no-op) |
+| `quotactl events` shows nothing (v0.1.9) · refuses with `this CLI cannot reach your service's handler ledger` (v0.1.10) | the standalone CLI has no access to your ledger (v0.1.9 read an empty in-memory stub) | `q.LedgerStore.QueryByUser` / `QueryByStatus` inside your service |
+| `replay` / `backfill` exit non-zero (v0.1.10) | at least one event was not accepted (or `backfill` ran without `--target` / secret) | read the per-event `HTTP <status>` lines; on v0.1.9 these exit `0`, so read them anyway |
 
 ## Billing (your key → billing)
 

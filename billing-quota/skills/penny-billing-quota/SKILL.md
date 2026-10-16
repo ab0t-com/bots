@@ -37,9 +37,12 @@ respect its **Coming** markers (approved or planned, not built; each has a *Toda
 - `org_id` from the validated token only; never forward a user's bearer upstream.
 - Say **org**, never "realm". The cross-customer capability is "the provider's platform-scope
   tier"; never recommend the legacy `cross_*` names even though server `403`s still print them.
-- The quota-go `README.md` describes an older API; the SOPs and `examples/basic/main.go` are the
-  source. Mount the auth-event receiver with `http.StripPrefix` (SOP 05). Unsure of a flag:
-  `quotactl <cmd> --help`.
+- Learn the user's quota-go version first (`go list -m github.com/ab0t-com/ab0t-quota-go`); the
+  SOPs mark what differs "on v0.1.9". On v0.1.9 the `README.md` describes an older API (from v0.1.10
+  it matches the code); the SOPs and `examples/basic/main.go` are the source. Mount the auth-event
+  receiver with `http.StripPrefix` (SOP 05; works on both versions). Unsure of a flag:
+  `quotactl <cmd> --help` (on v0.1.9 not `replay|backfill --help` with `AB0T_AUTH_WEBHOOK_SECRET`
+  exported: it prints the secret). On v0.1.9 a `quotactl` exit `0` proves nothing: read the output.
 - Never `redis-cli SET` a counter; reconcile. Billing and payment are reached only through their
   APIs; anything wrong there goes to support with the SOP 17 bundle.
 
@@ -68,7 +71,8 @@ respect its **Coming** markers (approved or planned, not built; each has a *Toda
 | every Coming item in one table | [../../GAPS.md](../../GAPS.md) |
 
 ## Companions (shipped in this folder; load by name when an SOP points there)
-Each is a short guide verified against `ab0t-quota-go` v0.1.9 / `ab0t-quota` v0.6.7 that links back
+Each is a short guide verified against `ab0t-quota-go` v0.1.9 (the `ab0t-quota-go-*` ones also
+against v0.1.10) / `ab0t-quota` v0.6.7 that links back
 to the SOPs; the SOPs win if they ever disagree.
 - Library: `ab0t-quota` (start here), `ab0t-quota-billing-101` (the words), `ab0t-quota-go-design`
   (decision order), `ab0t-quota-go-setup`, `ab0t-quota-go-config`, `ab0t-quota-go-middleware`,

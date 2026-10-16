@@ -6,8 +6,9 @@ description: >-
   credit_grant (trigger, lifecycle, destination, dedup), tier_provider (jwt / static / mesh),
   storage (redis_url, required), enforcement (enabled, shadow_mode, global_kill_switch), alerts,
   ${QUOTA_*} interpolation. Use when defining free / pro / enterprise tiers, debugging "tier not in
-  config", "credit_grant required", "QUOTA-CFG-001", or a config the library refuses. Verified
-  against v0.1.9; the step-by-step is billing-quota SOP 04.
+  config", "credit_grant required", "QUOTA-CFG-001", a config the library refuses, or the
+  "quota config:" boot warnings (v0.1.10). Verified against v0.1.9 and v0.1.10; the step-by-step is
+  billing-quota SOP 04.
 ---
 
 # quota-config.json
@@ -44,7 +45,7 @@ enforcement  are we blocking?    enabled · shadow_mode · global_kill_switch
   "enforcement": { "enabled": true, "shadow_mode": true }
 }
 ```
-This boots on v0.1.9 as written (with `memory://` for one dev process; set `QUOTA_REDIS_URL` for
+This boots on v0.1.9 and v0.1.10 as written (with `memory://` for one dev process; set `QUOTA_REDIS_URL` for
 anything else). The full Acme config, with three tiers, a priced Pro tier and its monthly credit, is
 SOP 04.
 
@@ -52,20 +53,24 @@ Rules the library enforces (and what it does not):
 - `tiers[]` is required; `tier_id` and `resource_key` must be unique; a `resource_bundles` entry must
   name known resources.
 - `rate` needs `window_seconds`; `accumulator` needs `reset_period` (`hourly`, `daily`, `weekly`,
-  `monthly`); `counter_type` must be one of the three.
+  `monthly`; any other value means the counter never resets); `counter_type` must be one of the three.
 - A limit is a number, `null` (unlimited) or `{limit, warning_threshold, critical_threshold,
   burst_allowance, per_user_limit}`; a tier-level `default_per_user_fraction` derives per-user caps.
 - `billing_model`: `subscription_with_credits` needs a `price` and a `credit_grant` with
   `trigger: "subscription_invoice_paid"`; `subscription_unlock_only` forbids a `credit_grant`;
   `consumption_only` forbids a `price`; `metered_billing` and `one_time_purchase` need
-  `AB0T_QUOTA_ALLOW_EXPERIMENTAL_BILLING_MODELS=true`. Other values are not checked: spell them
-  exactly (`free_tier`, `enterprise`).
+  `AB0T_QUOTA_ALLOW_EXPERIMENTAL_BILLING_MODELS=true`. Other values are not refused: spell them
+  exactly (`free_tier`, `enterprise`). On v0.1.10 an unknown `billing_model`, `reset_period`,
+  `trigger`, `dedup`, `lifecycle` or `destination`, a limit naming no resource, and enforcement off
+  are logged at boot as `quota config: …` (also `Capabilities.ConfigWarnings`); v0.1.9 is silent.
 - `credit_grant`: `trigger` (`signup`, `subscription_invoice_paid`, `scheduled_period_start`,
   `manual`, `webhook_admin`), `amount_per_period` > 0, `currency` (default `USD`), `lifecycle`
   (`use_it_or_lose_it` default, `rollover_capped` + `rollover_max_periods`, `persistent`),
   `destination` (`subscription_credit` default, `credit_balance`), `dedup` (`per_user_per_tier`
   default, `per_org_per_tier`, `per_user_global`, `per_org_global`), `reset_on_downgrade` /
-  `reset_on_upgrade` (default `false`; write them).
+  `reset_on_upgrade` (default `false`; write them). Only `trigger: "signup"` is granted on auth
+  events (v0.1.10; v0.1.9 granted any tier's grant there, SOP 10). Always write the trigger: Go
+  treats a missing one as `signup`, Python grants nothing.
 - Legacy `initial_credit: "10.00"` on a tier becomes a `signup` grant with `lifecycle: persistent`
   and `destination: credit_balance`. Write `credit_grant` instead; never both.
 - `storage.redis_key_prefix` must be `"quota"` or absent.
@@ -85,7 +90,9 @@ Rules the library enforces (and what it does not):
 
 | mistake | what you see |
 |---|---|
-| `enforcement.enabled` left out | nothing is ever denied: `X-Quota-Reason: enforcement_disabled` |
+| `enforcement.enabled` left out | nothing is ever denied: `X-Quota-Reason: enforcement_disabled` (v0.1.10 also warns at boot) |
+| a `reset_period` typo (`"month"`) | the accumulator never resets: a monthly cap becomes a lifetime cap (v0.1.10 warns at boot; v0.1.9 silent) |
+| config path in `AB0T_QUOTA_CONFIG_PATH` | ignored on both versions (v0.1.10 warns); the variable is `QUOTA_CONFIG_PATH` |
 | a paid tier without its grant | `tier "pro": billing_model "subscription_with_credits" requires credit_grant with trigger "subscription_invoice_paid"` |
 | rate without a window | `resource "…": window_seconds required for rate counters` |
 | accumulator without a period | `resource "…": reset_period required for accumulator counters` |
@@ -98,7 +105,8 @@ Rules the library enforces (and what it does not):
 ```sh
 quotactl capabilities --config ./quota-config.json   # loads it exactly as Setup does; connects to Redis
 ```
-There is no offline validator yet; this (or starting the service) is the check. Still stuck: send the
+There is no offline validator yet; this (or starting the service) is the check. On v0.1.10 read
+its `ConfigWarnings` too. Still stuck: send the
 error line and the file (no secrets) to `platform-team@ab0t.com`.
 
 SOPs: [04 describe tiers and resources](../../04_sop_system_describe_tiers_and_resources.md) ·

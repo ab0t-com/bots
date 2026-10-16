@@ -16,12 +16,12 @@
 | 02 | [Day zero: Acme meters invoicer](02_sop_system_day_zero_acme_meters_invoicer.md) | The whole first day, in order, with the two waits named. |
 | 03 | [Get your keys](03_sop_system_get_your_keys.md) | `authsetup connect billing|payment --as invoicer`; what the read-only tier allows; how to ask for writes; the `AB0T_QUOTA_*` env names. |
 | 04 | [Describe tiers and resources](04_sop_system_describe_tiers_and_resources.md) | `quota-config.json`: resources (rate/accumulator/gauge), tiers, limits, billing models, credit grants, tier provider, storage, enforcement. |
-| 05 | [Wire the library](05_sop_system_wire_the_library.md) | `quota.Setup`, `q.Middleware`, `q.Spend`; the Python one-liner; the headers and the 429 body; the stale README warning. |
+| 05 | [Wire the library](05_sop_system_wire_the_library.md) | `quota.Setup`, `q.Middleware`, `q.Spend`; the Python one-liner; the headers and the 429 body; the README (stale on v0.1.9, current from v0.1.10). |
 | 06 | [Shadow run, then enforce](06_sop_system_shadow_run_then_enforce.md) | A shadow day, the nine-item acceptance list, the rollback drill, the three emergency levers. |
 | 07 | [Plans, prices, checkout, portal](07_sop_system_plans_prices_checkout_portal.md) | Create plans in dollars, the public plans list, subscription and top-up checkout, the portal, your proxy routes. |
 | 08 | [Subscriptions, webhooks, tier sync](08_sop_system_subscriptions_webhooks_tier_sync.md) | Stripe → payment → billing tier; the price→tier map; reading subscription state; downgrades and credit resets. |
 | 09 | [Tiers and upgrades](09_sop_system_tiers_and_upgrades.md) | Tier sources (jwt/static/mesh), the ladder, moving one customer by hand, per-user caps, trials. |
-| 10 | [Credits, grants, auth events](10_sop_system_credits_grants_auth_events.md) | Sign-up gifts via signed auth events, `CreditGranter`, `quotactl subscribe-events|replay|backfill`, subscription refills, manual grants. |
+| 10 | [Credits, grants, auth events](10_sop_system_credits_grants_auth_events.md) | Sign-up gifts via signed auth events, the built-in `BillingCreditGranter` (v0.1.10) or your own, `quotactl subscribe-events|replay|backfill`, secret rotation, subscription refills, manual grants. |
 | 11 | [Metering money with billing](11_sop_system_metering_money_with_billing.md) | Record usage, validate-access, reserve/commit/refund/settle, the ledger reads, the library's paid mode. |
 | 12 | [Multi-tenant correctness](12_sop_system_multi_tenant_correctness.md) | `org_id` from the token, the cross-customer capability, what stays with the customer, counting at the right level. |
 | 13 | [Observability, alerts, reconciliation](13_sop_system_observability_alerts_reconciliation.md) | Alerts, capabilities in `/healthz`, drift and `ReconcileOrg`, `doctor`, the kill switch. |

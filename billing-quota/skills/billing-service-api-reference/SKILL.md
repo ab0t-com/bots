@@ -38,6 +38,7 @@ live contract: curl -s https://billing.service.ab0t.com/openapi.json | jq -r '.p
 | cancel it | `POST /billing/{org}/refund` | `billing.write.refunds` | `reservation_id` |
 | settle after it expired | `POST /billing/{org}/settle` | `billing.write.transactions` | `settlement_key` = the reservation id |
 | promotional / sign-up credit | `POST /billing/{org}/promotional-credit` | `billing.write.transactions` | `idempotency_key` (required) |
+| credit grant into a declared bucket and lifecycle (no lifetime cap) | `POST /billing/{org}/apply-credit-grant` | `billing.write.transactions` | `idempotency_key` (required) |
 | tier | `GET /billing/{org}/tier` · `GET …/tier/limits` | `billing.read` | — |
 | move a customer's tier | `PUT /billing/{org}/tier` `{tier_id, reason}` | `billing.write.tier` | same tier twice is a no-op |
 | history, ledger | `GET /billing/{org}/transactions` · `…/reservations` · `GET /billing/usage/{org}/summary` · `…/records` | `billing.read.transactions` / `.reservations` / `.usage` | — |
@@ -52,13 +53,15 @@ override routes are admin-only. `/health` is public.
 B=https://billing.service.ab0t.com; ORG=<customer org id>; KEY=<your billing key>
 curl -sS -H "X-API-Key: $KEY" "$B/billing/$ORG/balance"
 curl -sS -X POST -H "X-API-Key: $KEY" -H 'Content-Type: application/json' "$B/billing/usage/$ORG/" \
-  -d '{"org_id":"'"$ORG"'","user_id":"<user>","tool_id":"invoicer.pdf_render","request_id":"invoicer:pdf_render:<id>","cost":"0.0200"}'
+  -d '{"org_id":"'"$ORG"'","user_id":"<user>","tool_id":"invoicer.pdf_render","request_id":"invoicer:pdf_render:<id>","cost":"0.0200","platform_fee":"0"}'
 ```
 - Balance: `{balance, credit_balance, subscription_credit, reserved_balance, available_balance,
   currency, source}`; `available_balance = balance + credit_balance + subscription_credit −
   reserved_balance` is the only "can spend" number.
 - Usage answers `200 {"status":"accepted", "usage_id", …}` at once and is processed asynchronously;
-  a replay within 24 h returns the original. Omit `cost` to let billing price it.
+  a replay within 24 h returns the original. Billing uses your `cost` only when `platform_fee` is
+  sent too; leave either out and billing prices the row itself (fallback rates, minimum charge), so a
+  free row says `"cost":"0","platform_fee":"0"`.
 - Reserve → work → commit: send the **inputs** on commit (`started_at`, `stopped_at`,
   `hourly_rate`, `allocation_fee`); a cost-only commit (`actual_usage.cost`) still works but is
   deprecated. Unused reservation is refunded on commit; reservations expire after 24 h.

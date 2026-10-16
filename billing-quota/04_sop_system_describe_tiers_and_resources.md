@@ -23,7 +23,7 @@
       "counter_type": "gauge", "unit": "seats" }
   ],
 ```
-Three counter types: **rate** needs `window_seconds`; **accumulator** needs `reset_period` (`hourly`, `daily`, `weekly`, `monthly`); **gauge** goes up on acquire and down on release. `resource_bundles` lets one name cover several keys (`"invoice_create": ["invoicer.api.requests", "invoicer.invoices"]`).
+Three counter types: **rate** needs `window_seconds`; **accumulator** needs `reset_period` (`hourly`, `daily`, `weekly`, `monthly`; any other value means the counter never resets, so a monthly cap becomes a lifetime cap); **gauge** goes up on acquire and down on release. `resource_bundles` lets one name cover several keys (`"invoice_create": ["invoicer.api.requests", "invoicer.invoices"]`).
 
 **3. Name your tiers and limits.**
 ```json
@@ -44,7 +44,7 @@ Three counter types: **rate** needs `window_seconds`; **accumulator** needs `res
 ```
 - A limit is a number, `null` (unlimited), or an object with `limit`, `warning_threshold` (0.80), `critical_threshold` (0.95), `burst_allowance`, `per_user_limit`.
 - `billing_model` values: `consumption_only`, `subscription_unlock_only`, `subscription_with_credits`, `free_tier`, `enterprise`. (`metered_billing` and `one_time_purchase` are experimental and refused unless `AB0T_QUOTA_ALLOW_EXPERIMENTAL_BILLING_MODELS=true`.) `subscription_with_credits` requires a `price` and a `credit_grant` whose trigger is `subscription_invoice_paid`; `consumption_only` forbids a price; `subscription_unlock_only` forbids a credit grant.
-- `credit_grant`: `trigger` (`signup`, `subscription_invoice_paid`, `scheduled_period_start`, `manual`, `webhook_admin`), `amount_per_period` (> 0), `lifecycle` (`use_it_or_lose_it` default, `rollover_capped` + `rollover_max_periods`, `persistent`), `destination` (`subscription_credit` default, `credit_balance`), `dedup` (`per_user_per_tier` default, `per_org_per_tier`, `per_user_global`, `per_org_global`). Write `reset_on_downgrade` and `reset_on_upgrade` explicitly; they default to `false`. For a sign-up gift on the free tier, `"credit_grant": {"trigger": "signup", "amount_per_period": "5.00", "destination": "credit_balance", "lifecycle": "persistent", "dedup": "per_user_per_tier", "reset_on_downgrade": false, "reset_on_upgrade": false}` (SOP 10).
+- `credit_grant`: `trigger` (`signup`, `subscription_invoice_paid`, `scheduled_period_start`, `manual`, `webhook_admin`), `amount_per_period` (> 0), `lifecycle` (`use_it_or_lose_it` default, `rollover_capped` + `rollover_max_periods`, `persistent`), `destination` (`subscription_credit` default, `credit_balance`), `dedup` (`per_user_per_tier` default, `per_org_per_tier`, `per_user_global`, `per_org_global`). Write `reset_on_downgrade` and `reset_on_upgrade` explicitly; they default to `false`. Only `trigger: "signup"` is granted on auth events (v0.1.10; v0.1.9 granted any trigger there, see SOP 10 step 1), and always write the trigger: Go treats a missing one as `signup`, Python grants nothing. For a sign-up gift on the free tier, `"credit_grant": {"trigger": "signup", "amount_per_period": "5.00", "destination": "credit_balance", "lifecycle": "persistent", "dedup": "per_user_per_tier", "reset_on_downgrade": false, "reset_on_upgrade": false}` (SOP 10).
 
 **4. Say where the tier comes from.**
 ```json
@@ -63,13 +63,13 @@ Three counter types: **rate** needs `window_seconds`; **accumulator** needs `res
 ```
 - `storage.redis_url` is **required**; the library refuses to start without it. `"memory://"` is allowed in Go for a single process in development (Python refuses it). Only `${QUOTA_*}` names are expanded inside the file.
 - `enforcement.enabled` has **no default**: leave it out and nothing is ever denied (`reason: enforcement_disabled`). Start with `shadow_mode: true` (SOP 06).
-- `billing.enable_paid` and the `outbox` are for when usage must reach billing (SOP 11). Until then `allow_ephemeral: true` lets the service start with billing off even if `AB0T_QUOTA_BILLING_URL` is set. This day-one config declares no DynamoDB: anything that names it (`storage.dynamodb_table`, `outbox.store: "ddb"`, `outbox.ddb_table`) makes the library create its tables in your AWS account at start-up, so add it only when you turn on paid mode (SOP 11 step 6).
+- `billing.enable_paid` and the `outbox` are for when usage must reach billing (SOP 11). Until then `allow_ephemeral: true` lets the service start with billing off even if `AB0T_QUOTA_BILLING_URL` is set, but `q.Healthy()` then reports not healthy; the cleaner switch is `Options.EnablePaid=&false` in code (SOP 05 step 4), which keeps the service healthy. This day-one config declares no DynamoDB: anything that names it (`storage.dynamodb_table`, `outbox.store: "ddb"`, `outbox.ddb_table`) makes the library create its tables in your AWS account at start-up, so add it only when you turn on paid mode (SOP 11 step 6).
 
 **6. Check it.** There is no offline validator command (see *Coming*). The library validates at start-up and refuses with a named error; the fastest check is the CLI's smoke run, which **does connect** to the declared Redis (and would create DynamoDB tables if you declared them):
 ```sh
 quotactl capabilities --config ./quota-config.json
 ```
-Read the capabilities report: `enforcement`, `billing`, `payment`, `credit_grant`, `auth_events_signed`, each with a `WhyOff` reason.
+Read the capabilities report: `enforcement`, `billing`, `payment`, `credit_grant`, `auth_events_signed`, each with a `WhyOff` reason. On v0.1.10 also read `ConfigWarnings` (the same lines are logged at start-up as `quota config: …`): enforcement off, an accumulator `reset_period` that never resets, a tier limit for a resource that does not exist, an unknown `billing_model`, `credit_grant.trigger`, `dedup`, `lifecycle` or `destination`. They are warnings only; nothing refuses to start because of them.
 
 ## What you'll see
 
@@ -81,22 +81,23 @@ Validation errors, in the library's words, as `quota.Setup: validate config: …
 - `tier "pro": credit_grant.amount_per_period must be > 0` · `credit_grant.rollover_max_periods required when lifecycle is "rollover_capped"`
 - `quota.Setup: tier provider: tier_provider.type required (jwt | mesh | static)` · `quota.Setup: tier provider: tier_provider.type unknown: "billing"`
 - `ab0t-quota-go config error [QUOTA-CFG-001] — Redis counter store URL is not declared.` (set `storage.redis_url` or `QUOTA_REDIS_URL`)
-- `config: engine_mode "bridge" is out of scope for v0.1.0` (bridge is Python-only; the message still names v0.1.0 in v0.1.9)
+- `config: engine_mode "bridge" is out of scope for v0.1.0` (bridge is Python-only; the message still names v0.1.0 in v0.1.9 and v0.1.10)
 - `config: keyspace v2 keys carry a service segment — declare service_name before storage.keyspace_version=2 or keyspace_dual_write`
 
 ## If it goes wrong
 
-- A `billing_model` typo passes silently (values are not enumerated); only the cross-field rules fire. Spell them from the list above.
-- `reset_period` and `dedup` values are also not enumerated; a typo is used verbatim. Copy them exactly.
+- A `billing_model` typo is not refused (values are not enumerated); only the cross-field rules fire. Silent on v0.1.9; warned at boot on v0.1.10 (`quota config: tier "…": unknown billing_model …`). Spell them from the list above.
+- `reset_period`, `dedup`, `trigger`, `lifecycle` and `destination` values are not refused either; a typo is used verbatim (a misspelt `reset_period` never resets). Silent on v0.1.9; warned at boot on v0.1.10. Copy them exactly.
+- A tier limit for a `resource_key` that is not in `resources[]` is never enforced. Silent on v0.1.9; warned at boot on v0.1.10.
 - Unknown nested keys are ignored, so a misplaced `"shadow_mode"` outside `enforcement` does nothing. Keep the nesting shown.
 - `storage.redis_key_prefix` must be `"quota"` or absent; anything else is refused at start-up (it would fork the keyspace from the Python runtime).
 
 ## Coming
 
 - **An offline `quotactl validate`** (no Redis, no DynamoDB) that prints the errors above. *Today:* `capabilities`, which connects, or start the service.
-- **Enumerated `billing_model`, `reset_period`, `dedup`, `trigger` values** refused on typo. *Today:* silent.
+- **Enumerated `billing_model`, `reset_period`, `dedup`, `trigger` values** refused on typo. *Today:* warned at boot on v0.1.10 (not refused); silent on v0.1.9.
 - **`tier_provider.type: "mesh"` working out of the box.** *Today* the library does not wire its lookup; you must supply one in code (SOP 09) or use `jwt`/`static`.
-- **`enforcement.enabled` defaulting to true, or refusing to start when absent.** *Today:* absent means allow everything.
+- **`enforcement.enabled` defaulting to true, or refusing to start when absent.** *Today:* absent means allow everything (warned at boot on v0.1.10; silent on v0.1.9).
 - **A published JSON schema at the `$schema` URL and a `quota-config.example.json` in the Go repo.** *Today:* the Python repo's `quota-config-schema.json` and `quota-config.example.json`.
 
 ## Next

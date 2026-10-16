@@ -36,8 +36,8 @@ of guessing.
 | customer gets `429` but should not | their `X-Quota-Tier`, `X-Quota-Used`, `X-Quota-Limit`, `X-Quota-Reason` | wrong tier (step 3), a drifted gauge (`ReconcileOrg`), or a limit too low (SOP 14) |
 | usage number looks wrong | `ReconcileOrg` report (`before`/`after`/`status`) | a release path forgot `q.Release`; wire `ObservedUsageProvider` so it self-heals (SOP 13) |
 | paid but still on free | `GET /billing/<org>/tier`, then `GET /subscriptions/<org>` | price not mapped to a tier, token not refreshed, or cache (SOP 08 chain) |
-| credit not granted | receiver response and ledger outcome in your logs | `404` (mount without `StripPrefix`), `401` (secret), granter path or permissions (SOP 10) |
-| service will not start | the first error line | the SOP 17 start-up table (Redis not declared or unsafe, paid-mode chain, config) |
+| credit not granted | receiver response and ledger outcome in your logs | `404` (v0.1.9: full-path mount without `StripPrefix`), `401` (secret), ledger `skipped` with `trigger is …, not signup` (v0.1.10: not a sign-up grant), granter path or permissions (SOP 10); after the fix re-send with `quotactl backfill` |
+| service will not start | the first error line | the SOP 17 start-up table (Redis not declared or unsafe, paid-mode chain, config); on v0.1.10 also read the `quota config: …` warnings |
 | `503 {"detail":"quota engine error"}` | your logs: `quota guard: engine error, fail-closed` | unknown `resource_key` from `Router`, or Redis down (SOP 05) |
 | need to stop all spend now | — | `enforcement.global_kill_switch: true` + deploy (denies everything); `shadow_mode: true` to stop denying instead (SOP 13 step 7) |
 

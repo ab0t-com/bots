@@ -40,10 +40,11 @@ customer pays → payment (Stripe) → billing: balance + tier → the guard see
 2. Write `quota-config.json` with `enforcement: {enabled: true, shadow_mode: true}` (SOP 04).
 3. Add the library (versions are git tags; pin them):
    ```sh
-   go get github.com/ab0t-com/ab0t-quota-go@v0.1.9
-   go install github.com/ab0t-com/ab0t-quota-go/cmd/quotactl@v0.1.9
+   go get github.com/ab0t-com/ab0t-quota-go@v0.1.10
+   go install github.com/ab0t-com/ab0t-quota-go/cmd/quotactl@v0.1.10
    pip install "ab0t-quota[all] @ git+https://github.com/ab0t-com/ab0t-quota.git@v0.6.7"   # Python instead
    ```
+   v0.1.9 still works; the SOPs mark its workarounds "on v0.1.9".
 4. Wire `quota.Setup`, `q.Middleware`, `q.Spend` (SOP 05, compiled code there).
 5. Run a shadow day, then enforce (SOP 06). Plans and checkout: SOP 07. Sign-up credit: SOP 10.
 
@@ -62,9 +63,9 @@ customer pays → payment (Stripe) → billing: balance + tier → the guard see
 |---|---|---|
 | `enforcement.enabled` left out | every request `X-Quota-Reason: enforcement_disabled` | write it (SOP 04) |
 | no Redis declared | `ab0t-quota-go config error [QUOTA-CFG-001] — Redis counter store URL is not declared.` | `storage.redis_url` or `QUOTA_REDIS_URL`; `"memory://"` for one dev process |
-| receiver mounted at its full path | auth events answer `404 page not found`; no sign-up credit | `http.StripPrefix("/api/quotas", q.WebhookHandler())` (SOP 05) |
-| billing URL set before paid mode is ready | `quota.Setup: enable_paid but the billing chain is SEVERED — …` | `outbox.allow_ephemeral: true` in dev, or unset the URL (SOP 05 step 4) |
-| following the quota-go README's example | `quota.Config`, `Mount`, `CheckBundle` do not compile | use SOP 05 and `examples/basic/main.go` |
+| v0.1.9: receiver mounted at its full path | auth events answer `404 page not found`; no sign-up credit | `http.StripPrefix("/api/quotas", q.WebhookHandler())` (SOP 05; works on both versions; v0.1.10 also answers at the full path) |
+| billing URL set before paid mode is ready | `quota.Setup: enable_paid but the billing chain is SEVERED — …` | not metering yet: `Options.EnablePaid=&false` (SOP 05 step 4); `outbox.allow_ephemeral: true` is dev only |
+| v0.1.9: following the quota-go README's example | `quota.Config`, `Mount`, `CheckBundle` do not compile | use SOP 05 and `examples/basic/main.go` (from v0.1.10 the README matches the code) |
 
 ## Check it worked
 

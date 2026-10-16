@@ -22,7 +22,7 @@
 
 **9. Never a `platform`-scope capability by default, and never hand it to a customer.** The cross-customer capability belongs to your service identity because it is a gateway; a customer's admin can never grant it to themselves, and you must never place it in a default grant, a default role, a default team or a self-serve tier of your own. Request only the writes you proxy; no `billing.admin` / `payment.admin` unless you administer plans. (SOP 03, Ally SOP 17)
 
-**10. Verify webhooks over the raw body, with a shared secret you rotate.** Auth events: `X-Event-Signature` HMAC over the exact bytes; a missing secret means every event is rejected, which is the safe default. Stripe events: forward body and `Stripe-Signature` unchanged to payment, or let Stripe call payment directly; never act on an unverified event. (SOP 08, 10)
+**10. Verify webhooks over the raw body, with a shared secret you rotate.** Auth events: `X-Event-Signature` HMAC over the exact bytes; a missing secret means every event is rejected, which is the safe default. Give the secret to `quotactl replay` / `backfill` through `AB0T_AUTH_WEBHOOK_SECRET`, never `--secret` (a command line is visible in `ps`); on v0.1.9 their `--help` prints the exported secret, so do not run it in a shared terminal or CI log. Stripe events: forward body and `Stripe-Signature` unchanged to payment, or let Stripe call payment directly; never act on an unverified event. (SOP 08, 10)
 
 **11. Counters are caches of a truth you own.** Wire truth providers; reconcile; never `redis-cli SET`. Redis must be single-node, non-evicting, Lua-enabled; the library refuses anything else. (SOP 13)
 

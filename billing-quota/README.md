@@ -31,10 +31,11 @@ Ally; whichever bot you install last provides them.
 Also install Ally (`../authmesh/install.sh`), since Penny hands all `authsetup` work to her, and the
 library you use:
 ```sh
-go install github.com/ab0t-com/ab0t-quota-go/cmd/quotactl@v0.1.9                      # Go: the quotactl CLI
-go get github.com/ab0t-com/ab0t-quota-go@v0.1.9                                        # Go: the library, in your module
+go install github.com/ab0t-com/ab0t-quota-go/cmd/quotactl@v0.1.10                     # Go: the quotactl CLI
+go get github.com/ab0t-com/ab0t-quota-go@v0.1.10                                       # Go: the library, in your module
 pip install "ab0t-quota[all] @ git+https://github.com/ab0t-com/ab0t-quota.git@v0.6.7"   # Python
 ```
+v0.1.9 still works; where it needs a workaround, the SOPs say "on v0.1.9: …".
 Then start a new Claude Code session and say `@agent-penny`, or "add a free and pro tier to my
 service", "my customer paid but is still on free", "connect to billing".
 
@@ -51,8 +52,8 @@ service", "my customer paid but is still on free", "connect to billing".
 ## Keeping it honest
 
 Every command, flag, field and message in the SOPs was checked against the source of `ab0t-quota-go`
-v0.1.9, `ab0t-quota` v0.6.7 and the billing and payment services, and the Go snippets compile
-against v0.1.9. Where the tool does not do something yet, the SOP says **Coming** and gives today's
+v0.1.9 and v0.1.10, `ab0t-quota` v0.6.7 and the billing and payment services. The Go snippets
+compile against v0.1.9, except those marked v0.1.10 (the built-in credit granter), which need v0.1.10. Where the tool does not do something yet, the SOP says **Coming** and gives today's
 workaround; `GAPS.md` collects them. When a gap ships, the SOP is updated and the row removed.
 
 Questions or a message the SOPs do not cover: `platform-team@ab0t.com`.

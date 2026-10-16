@@ -8,10 +8,12 @@
 
 **1. Install, pinned.** The library is pre-1.0; the version lives in the git tag and breaking changes have shipped as patches, so pin and read the changelog on every bump (SOP 16).
 ```sh
-go get github.com/ab0t-com/ab0t-quota-go@v0.1.9
-go install github.com/ab0t-com/ab0t-quota-go/cmd/quotactl@v0.1.9      # the companion CLI
+go get github.com/ab0t-com/ab0t-quota-go@v0.1.10
+go install github.com/ab0t-com/ab0t-quota-go/cmd/quotactl@v0.1.10     # the companion CLI; `quotactl --version` prints v0.1.10
 ```
-One warning before you read anything else in that repository: its `README.md` "minimal example" (`quota.Config{…}`, `qctx.Mount`, `CheckBundle`, `quota.WriteDenial`) and its env-var table describe an older API and do **not** match the v0.1.9 code. The real surface is below (compiled against v0.1.9) and in `examples/basic/main.go`.
+v0.1.9 still works with the workarounds marked "on v0.1.9" in these SOPs (its `quotactl --version` prints `dev`). Moving from v0.1.9 to v0.1.10 changes no exported API; read the library's `migrations/v0.1.9-to-v0.1.10/MIGRATION.md` and run its read-only checker (SOP 16).
+
+The library's `README.md` is current from v0.1.10: its minimal example is `examples/basic/main.go` verbatim. **On v0.1.9** the README is stale: its "minimal example" (`quota.Config{…}`, `qctx.Mount`, `CheckBundle`, `quota.WriteDenial`) and its env-var table describe an older API and do **not** match the code; use the surface below (it compiles against both versions) and `examples/basic/main.go`.
 
 **2. Start it and guard your routes.**
 ```go
@@ -41,9 +43,9 @@ guard := q.Middleware(quota.MiddlewareDeps{
 mux.Handle("/api/", guard(apiHandler))
 mux.Handle("/api/quotas/", http.StripPrefix("/api/quotas", q.WebhookHandler()))   // receives /api/quotas/_webhooks/auth (SOP 10)
 ```
-`Identity` and `Router` are required; the guard panics at construction without them (`middleware.Guard: Identity required`). The bearer token is placed in the request context for the `jwt` tier provider.
+`Identity` and `Router` are required; the guard panics at construction without them (`middleware.Guard: Identity required`). The bearer token is placed in the request context for the `jwt` tier provider (v0.1.10 recognises `Authorization: bearer …` in any case; v0.1.9 only the exact `Bearer ` prefix).
 
-Mount the auth-event receiver exactly as shown, with `http.StripPrefix`. The receiver answers on its own path (`/_webhooks/auth`), so `mux.Handle("/api/quotas"+authevents.WebhookPath, q.WebhookHandler())` (the form in the library's own examples) answers every event with `404 page not found` and no sign-up credit is ever granted.
+The auth-event receiver mount shown, with `http.StripPrefix`, works on both versions. *On v0.1.10* the receiver answers any path ending in `/_webhooks/auth`, so the full-path form `mux.Handle("/api/quotas"+authevents.WebhookPath, q.WebhookHandler())` works too (a non-POST gets `405`, a body over 1 MiB `413`). *On v0.1.9* the receiver answers only on its own path (`/_webhooks/auth`), so that full-path form answers every event with `404 page not found` and no sign-up credit is ever granted: keep `http.StripPrefix`.
 
 **3. Spend after the work.** The guard only **checks**. Counters move only when you say so. `Spend` returns the new running total and an error; `Release` returns an error:
 ```go
@@ -67,9 +69,14 @@ AB0T_QUOTA_BILLING_TOKEN=<billing key, SOP 03>
 AB0T_QUOTA_PAYMENT_URL=https://payment.service.ab0t.com
 AB0T_QUOTA_PAYMENT_TOKEN=<payment key, SOP 03>
 ```
-Only names starting `QUOTA_`, `AB0T_QUOTA_`, `AB0T_AUTH_` (and the AWS SDK's) are read. A bare `REDIS_URL` or `AUTH_SERVICE_URL` is ignored. With no billing URL the library starts with billing **off** and says so (`WhyOff: "AB0T_QUOTA_BILLING_URL not set"`).
+Only names starting `QUOTA_`, `AB0T_QUOTA_`, `AB0T_AUTH_` (and the AWS SDK's) are read. A bare `REDIS_URL` or `AUTH_SERVICE_URL` is ignored. The config path variable is `QUOTA_CONFIG_PATH`: `AB0T_QUOTA_CONFIG_PATH` is not read on either version (v0.1.10 logs a warning when it is set). With no billing URL the library starts with billing **off** and says so (`WhyOff: "AB0T_QUOTA_BILLING_URL not set"`).
 
-Setting `AB0T_QUOTA_BILLING_URL` also tells the library you mean to bill (paid mode). Until the durable outbox from SOP 11 step 6 is in place, `Setup` then refuses to start unless your config has `"outbox": {"allow_ephemeral": true}` (SOP 04's example does; dev only), and with it the service starts with billing disabled and `q.Healthy()` reporting not healthy. If you only enforce limits for now, leave the billing URL unset until SOP 11.
+Setting `AB0T_QUOTA_BILLING_URL` also tells the library you mean to bill (paid mode). Until the durable outbox from SOP 11 step 6 is in place, `Setup` then refuses to start. If this service does not meter usage into billing yet (limits and/or sign-up credit only, SOP 10), say so in code, on both versions:
+```go
+paidOff := false
+q, err := quota.Setup(ctx, quota.Options{ConfigPath: "quota-config.json", EnablePaid: &paidOff})
+```
+Billing then reports `OFF (paid disabled)` and `q.Healthy()` is not degraded by it. The config flag `"outbox": {"allow_ephemeral": true}` (SOP 04's example has it; dev only) also lets the service start, but with billing reported as a severed chain and `q.Healthy()` false, so prefer `EnablePaid`. If you only enforce limits and grant no credit, you can also leave the billing URL unset until SOP 11.
 
 **5. Prove it loaded.**
 ```sh
@@ -103,10 +110,11 @@ async def create_invoice(request: Request, user: InvoiceWriter):
 
 Start-up logs one line per capability (`ab0t-quota capabilities`), `redis reachability verified (D-2/GT-T1): PING ok`, and `counter store resolved`. Allowed requests carry `X-Quota-Resource`, `X-Quota-Tier`, `X-Quota-Reason: under_limit`, `X-Quota-Limit`, `X-Quota-Remaining`, `X-Quota-Used`; near a threshold also `X-Quota-Warning`. A denial is:
 ```
-HTTP/1.1 429  Content-Type: application/json  Retry-After: …
+HTTP/1.1 429  Content-Type: application/json
 {"detail":"Quota exceeded for invoicer.invoices: 20/20 (tier: free).","reason":"exceeded",
  "resource":"invoicer.invoices","tier":"free","used":20,"limit":20,"upgrade_url":"https://invoicer.acme.example/upgrade"}
 ```
+The Python middleware also sends `Retry-After` (60 seconds unless the engine knows better); the Go middleware sends none on either version, so a Go service's clients must back off on their own.
 Other reasons you will meet: `near_warning`, `near_critical`, `burst_consumed` (allowed, warned), `unlimited`, `shadow_would_deny` (allowed; SOP 06), `tier_unresolved` (allowed, fail-open), `tier_not_in_config` (denied), `global_kill_switch` (denied), `enforcement_disabled` (allowed).
 
 ## If it goes wrong
@@ -118,15 +126,14 @@ Other reasons you will meet: `near_warning`, `near_critical`, `burst_consumed` (
 - `401 {"detail":"identity required"}` — your `Identity` callback returned an error; the auth middleware did not run first.
 - Every request allowed with `X-Quota-Reason: enforcement_disabled` — `enforcement.enabled` is missing or false.
 - No headers at all — the path is exempt or `Router` returned `""`.
-- Auth events to `/api/quotas/_webhooks/auth` answer `404 page not found` — the receiver was mounted without `http.StripPrefix` (step 2).
-- `Setup` refuses with `quota.Setup: enable_paid but the billing chain is SEVERED — …` right after you set `AB0T_QUOTA_BILLING_URL` — paid mode is on without a durable outbox (step 4); add `"outbox": {"allow_ephemeral": true}` for dev, or finish SOP 11 step 6.
+- Auth events to `/api/quotas/_webhooks/auth` answer `404 page not found` — on v0.1.9, the receiver was mounted at its full path without `http.StripPrefix` (step 2). On v0.1.10 the receiver answers any path ending in `/_webhooks/auth`; a `404` there means the request never reached it (check the mux pattern and the subscription's `--prefix`).
+- `Setup` refuses with `quota.Setup: enable_paid but the billing chain is SEVERED — …` right after you set `AB0T_QUOTA_BILLING_URL` — paid mode is on without a durable outbox (step 4). On v0.1.10 the message continues `Paid mode is on because AB0T_QUOTA_BILLING_URL is set (wiring billing asserts paid mode); if this service does not meter usage into billing yet (limits and/or sign-up credit only), pass Options.EnablePaid=&false`. Pass `EnablePaid: &paidOff` (both versions), or finish SOP 11 step 6.
+- The config file you set is not the one loaded — the variable is `QUOTA_CONFIG_PATH`; `AB0T_QUOTA_CONFIG_PATH` is ignored (v0.1.10 warns: `AB0T_QUOTA_CONFIG_PATH is set but IGNORED …`).
 - Python: `Quota engine not initialized` — Redis URL, DynamoDB table permissions, or JSON syntax; the Python runtime refuses `memory://` (QUOTA-CFG-005).
 
 ## Coming
 
-- **A README and example that match the code.** *Today:* use this SOP and `examples/basic/main.go`; ignore the README's `quota.Config`, `Mount`, `CheckBundle`, `WriteDenial`, and its `AB0T_MESH_*` env table.
 - **`tier_provider.type: "mesh"` wired by `Setup`.** *Today:* the mesh provider needs a lookup you supply in code (`providers/mesh.go` `SetLookup`), else it returns `default_tier`; prefer `jwt`.
-- **A webhook receiver that also answers when mounted at its full path** (as the library's examples do). *Today:* mount it with `http.StripPrefix` (step 2).
 - **One env-name set across runtimes.** *Today:* Go `AB0T_QUOTA_*_URL/_TOKEN`, Python `AB0T_MESH_API_KEY`/`AB0T_CONSUMER_ORG_ID`; `connect` prints a third (`BILLING_SERVICE_*`).
 
 ## Next

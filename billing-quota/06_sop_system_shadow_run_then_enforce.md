@@ -34,11 +34,11 @@ If the rate is far above what your pricing expects, the limits are too tight; if
 
 **5. Flip.** `"shadow_mode": false`, deploy, watch the `429` rate and the alert webhook for the first hour.
 
-**6. Keep the emergency brake in mind.** `"enforcement": {"global_kill_switch": true}` makes the library **deny everything** (`429`, reason `global_kill_switch`, message `Quota enforcement halted by global kill switch.`), on purpose, for a runaway-cost emergency. Go v0.1.9 and Python v0.6.7 behave the same here. To stop denying instead, use `shadow_mode: true` (allow, keep counting) or `enabled: false` (allow, stop counting). Redeploy either way. (Some older Python documentation describes the kill switch as *disabling* checks; the code denies.)
+**6. Keep the emergency brake in mind.** `"enforcement": {"global_kill_switch": true}` makes the library **deny everything** (`429`, reason `global_kill_switch`, message `Quota enforcement halted by global kill switch.`), on purpose, for a runaway-cost emergency. Go v0.1.9, Go v0.1.10 and Python v0.6.7 behave the same here. To stop denying instead, use `shadow_mode: true` (allow, keep counting) or `enabled: false` (allow, stop counting). Redeploy either way. (Some older Python documentation describes the kill switch as *disabling* checks; the code denies.)
 
 ## What you'll see
 
-Shadow: `200` with `X-Quota-Reason: shadow_would_deny` and a log line per would-deny. Enforced: `429` bodies as in SOP 05, `Retry-After` on rate counters, warnings in `X-Quota-Warning` as users approach `warning_threshold` (0.80) and `critical_threshold` (0.95). `doctor` prints `DOCTOR POSTURE — grades are remediation advice; the exit code is the boot verdict` and ends `DOCTOR VERDICT: exit N` (`0` ok, `1` gate refusal, `2` config, `3` unreachable, `4` internal; `--fail-on-risk` turns risk findings into exit 1; `--json` for CI).
+Shadow: `200` with `X-Quota-Reason: shadow_would_deny` and a log line per would-deny. Enforced: `429` bodies as in SOP 05 (`Retry-After` from the Python middleware only; Go sends none), warnings in `X-Quota-Warning` as users approach `warning_threshold` (0.80) and `critical_threshold` (0.95). `doctor` prints `DOCTOR POSTURE — grades are remediation advice; the exit code is the boot verdict` and ends `DOCTOR VERDICT: exit N` (`0` ok, `1` gate refusal, `2` config, `3` unreachable, `4` internal; `--fail-on-risk` turns risk findings into exit 1; `--json` for CI).
 
 ## If it goes wrong
 

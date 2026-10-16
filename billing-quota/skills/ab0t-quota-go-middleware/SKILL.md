@@ -7,7 +7,7 @@ description: >-
   tier_not_in_config, enforcement_disabled, global_kill_switch, …), q.Check / q.Spend / q.Release
   outside a request, and chi / gorilla / echo / gin adapters. Use when wiring the guard, debugging
   why a request was denied or carries no headers, or choosing fail-open vs fail-closed. Verified
-  against v0.1.9; the compiled walk-through is billing-quota SOP 05.
+  against v0.1.9 and v0.1.10 (the guard is unchanged); the compiled walk-through is billing-quota SOP 05.
 ---
 
 # The quota guard (HTTP middleware)
@@ -33,7 +33,7 @@ request ─► Exempt path? ─yes─► your handler (no headers)
           engine.Check → error? ─► FailOpen ? handler : 503 {"detail":"quota engine error"}
             │decision
             ▼
-          denied? ─► 429 + JSON body + X-Quota-* + Retry-After
+          denied? ─► 429 + JSON body + X-Quota-* (no Retry-After)
           allowed ─► X-Quota-* (+ X-Quota-Warning near a threshold) ─► your handler ─► you call q.Spend
 ```
 
@@ -69,11 +69,12 @@ Frameworks: `chi` / `gorilla/mux` → `r.Use(guard)`; `echo` → `e.Use(echo.Wra
 Allowed responses carry `X-Quota-Resource`, `X-Quota-Tier`, `X-Quota-Reason`, `X-Quota-Limit`,
 `X-Quota-Remaining`, `X-Quota-Used`, and `X-Quota-Warning` near a threshold. A denial:
 ```
-HTTP/1.1 429   Retry-After: …
+HTTP/1.1 429   Content-Type: application/json
 {"detail":"Quota exceeded for invoicer.invoices: 20/20 (tier: free).","reason":"exceeded",
  "resource":"invoicer.invoices","tier":"free","used":20,"limit":20,"upgrade_url":"https://…/upgrade"}
 ```
-Show `detail` and an upgrade button from `upgrade_url`.
+Show `detail` and an upgrade button from `upgrade_url`. The Go middleware sends no `Retry-After`
+(v0.1.9 and v0.1.10): have your client back off on its own (the Python middleware sends one).
 
 | reason | allowed? | meaning |
 |---|---|---|
@@ -94,6 +95,7 @@ Show `detail` and an upgrade button from `upgrade_url`.
 | auth middleware runs after the guard | `401 {"detail":"identity required"}` | auth first |
 | `Router` returns a key the config lacks | `503 {"detail":"quota engine error"}` (`engine: unknown resource_key`) | add the resource first (SOP 14 step 3) |
 | a token without the tier claim | `200` with `X-Quota-Reason: tier_unresolved` or the `default_tier` | check `jwt_claim_key`; set `default_tier` |
+| a client sending `Authorization: bearer …` (lower case) on v0.1.9 | the `jwt` tier provider sees no token: `default_tier` or `tier_unresolved` | send `Bearer`; v0.1.10 recognises the scheme in any case |
 | a release path forgot `Release` | a gauge that only goes up | release on every exit; reconcile (SOP 13) |
 | `FailOpen: true` on a route that costs money | free usage while Redis is down | fail-closed on spend, open on release |
 

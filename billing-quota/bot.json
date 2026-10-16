@@ -44,8 +44,11 @@
     "authsetup targets prod when no --env is given",
     "enforcement.enabled absent means every request is allowed",
     "quotactl capabilities and doctor connect to Redis and may create declared DynamoDB tables",
-    "setting AB0T_QUOTA_BILLING_URL turns paid mode on: Setup refuses to start without a durable outbox unless outbox.allow_ephemeral is true",
-    "the auth-event receiver answers 404 unless mounted with http.StripPrefix"
+    "setting AB0T_QUOTA_BILLING_URL turns paid mode on: Setup refuses to start without a durable outbox unless Options.EnablePaid=&false (or, dev only, outbox.allow_ephemeral is true)",
+    "on ab0t-quota-go v0.1.9 the auth-event receiver answers 404 unless mounted with http.StripPrefix (v0.1.10 also answers at its full path)",
+    "on ab0t-quota-go v0.1.9 the default sign-up handler grants any tier's credit_grant on org.created/user.org_assigned (v0.1.10: trigger signup only)",
+    "on ab0t-quota-go v0.1.9 quotactl subscribe-events, replay and backfill exit 0 on failure, and events/delete-user read an empty stub",
+    "on ab0t-quota-go v0.1.9 quotactl replay/backfill --help prints the exported AB0T_AUTH_WEBHOOK_SECRET"
   ],
-  "verified_against": { "ab0t-quota-go": "v0.1.9", "ab0t-quota": "0.6.7", "billing": "source 2026-10-16", "payment": "source 2026-10-16", "date": "2026-10-16" }
+  "verified_against": { "ab0t-quota-go": "v0.1.9 and v0.1.10","ab0t-quota": "0.6.7", "billing": "source 2026-10-16", "payment": "source 2026-10-16", "date": "2026-10-16" }
 }

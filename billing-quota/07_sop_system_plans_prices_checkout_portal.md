@@ -57,7 +57,9 @@ POST https://payment.service.ab0t.com/portal/<customer org id>/session     { "re
 ```
 Redirect there. This is how customers manage cards: a gateway **cannot** add or change a customer's payment method on their behalf (`Cross-organization payment method operations are not supported`).
 
-**6. The success page.** Do not trust the redirect. Verify: `GET /checkout/sessions/<session_id>/verify` (add `?process_if_complete=true` only with `payment.write`), or poll the subscription (SOP 08) until it is `active`/`trialing`. Never increment a balance optimistically.
+**6. The success page.** Do not trust the redirect. Verify: `GET /checkout/sessions/<session_id>/verify` (add `?process_if_complete=true` only with `payment.write`), or poll the subscription (SOP 08) until it is `active`/`trialing`. Fulfil only when the session's `payment_status` is `paid`, never on `status: "complete"` alone: with an asynchronous payment method the session completes before the money arrives. Never increment a balance optimistically.
+
+**Using the Go quota library's payment client (`q.Payment`) instead of REST?** On v0.1.10 `CreatePortalSession` (step 5) and `ListPaymentMethods` call payment's real routes; on v0.1.9 they answer `404` / an empty list, so call payment directly as above. `CreateCheckoutSession` answers `404` on both versions: use the routes in steps 3 and 4.
 
 **7. Your proxy routes.** The browser never holds your payment key. Typical shape:
 ```
