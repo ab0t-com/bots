@@ -21,7 +21,7 @@ run. Preview first (`--dry-run`) and read the whole plan.
   "provider": {
     "service_id": "reports",
     "service_name": "Acme Reports",
-    "credentials_path": "/home/you/.authmesh/reports/reports.dev.json",
+    "credentials_path": "~/.authmesh/reports/reports.dev.json",
     "service_url": "https://reports.acme.example"
   },
   "client": {
