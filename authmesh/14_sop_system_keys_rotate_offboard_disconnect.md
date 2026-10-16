@@ -8,16 +8,18 @@
 
 - A key's permissions are **fixed when it is minted**. Granting something to the account later does not change the key. Fewer permissions than you need means a new key.
 - Revoking is **irreversible**. Any service still using the key gets `401` at once.
+- Every key starts `ab0t_sk_live_…`, on every environment (dev and local too). `live` is part of the format both auth engines mint; it does **not** mean production. Which environment a key belongs to is the file it is in (`<service>.<env>.json`).
+- **Your service key was revoked or deleted** (a teammate, an incident)? From 0.5.27 you do nothing by hand: `authsetup --env dev --config-dir ./config run` (or `up`) asks the auth service, and when it answers that the saved key is not valid, step 01 moves the dead key's entry to `~/.authmesh/invoicer/.archive/`, mints a new key with every declared permission and prints `your saved service key no longer works (revoked or deleted) — minted <id>; deploy it: authsetup --env dev --config-dir ./config settings --env-file .env, then restart your app (it still holds the dead key)`. Do both: until your app restarts with the new key, its calls fail. `--dry-run` shows `re-mint service key (saved key is revoked)` first. If the check itself fails (the auth service returns `5xx`, times out or is unreachable) it stops and mints nothing.
 - Old keys stay valid until you revoke them, so rotation is: mint new → roll out → revoke old. No downtime.
 - **Never delete `~/.authmesh/<service>/`.** It holds every environment's credentials, including prod. Move aside one file at most.
 
 ## Steps
 
-**1. Rotate your service key.** Today this is a two-step dance (see *Coming*):
+**1. Rotate your service key** (a key that still works — a revoked one is re-minted by `run`, above). Today this is a two-step dance (see *Coming*):
 1. In `~/.authmesh/invoicer/invoicer.dev.json`, set the `api_key` object to `{}` (keep everything else). Do this in an editor; do not paste the file anywhere.
 2. `authsetup --env dev --config-dir ./config run 01` mints a fresh `invoicer-internal` key with every declared permission and saves it. (If the mint returns `403 … needs PRIVILEGED permissions …`, see SOP 05: declare `scope` so your own admin can grant them, or, for an undeclared service, the platform sanction.)
 3. Put the new value where SOP 06 step 4 says. Deploy.
-4. Revoke the old key by id, as your admin: `DELETE https://auth.dev.ab0t.com/api-keys/<old key id>` with `Authorization: Bearer <admin token>`.
+4. Revoke the old key by id, as your admin: `DELETE <auth>/api-keys/<old key id>` with `Authorization: Bearer <admin token>`, where `<auth>` is your environment's URL (`authsetup env` shows it).
 5. `authsetup --env dev doctor` should report the service key holds all declared permissions.
 
 **2. Rotate a consumer key (a provider you connected to).**
@@ -48,7 +50,8 @@ Then re-wire `BILLING_SERVICE_API_KEY`. In automation `--yes` skips the typed co
 - `refusing to revoke without confirmation on a non-interactive terminal — pass --yes to bypass (automation) or run interactively`: you piped it (from 0.5.24 `</dev/null` counts as not a terminal too).
 - After changing the admin password (step 6) without updating the file: `the saved admin credentials (admin …, file …) no longer sign in to …` on the next run; put the new password in `admin.password` of that file. `authsetup --env dev doctor --strict` checks the sign-in on demand.
 - `could not authenticate as the saved consumer … to revoke its key`: the stored password no longer works. Revoke from the provider's side or the auth API, then archive the file by hand.
-- Revoked the wrong key: it cannot come back. `connect` again (consumer) or step 1 (service key), then re-wire.
+- Revoked the wrong key: it cannot come back. `connect` again (consumer); for the service key just `authsetup --env dev --config-dir ./config run` (0.5.27 re-mints a revoked one), then re-wire.
+- `status` / `doctor` say `service API key <id> no longer works (revoked or deleted)`: run the command its NEXT prints (`authsetup --env dev --config-dir ./config run`), then `settings --env-file .env`, and restart your app so it loads the new key (`status` cannot see your app; its "nothing to change" is about the mesh only). Do **not** point `--creds-dir` at a new folder: that starts a second setup and stops on `is taken`.
 - `doctor` says `service key ◐ UNDER-PERMISSIONED`: you added permissions to config after minting. Rotate per step 1.
 
 ## Coming

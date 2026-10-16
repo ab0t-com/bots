@@ -2,7 +2,7 @@
 
 **Who this is for.** A team putting its own product on the ab0t auth mesh with one tool, `authsetup`: sign-in for your customers, permissions, a branded login page, keys for your backend, and connections to other services such as billing and payment. No auth internals required. The running example throughout is **Acme** and their service **`invoicer`**.
 
-**Checked against `authsetup` 0.5.25** (the `VERSION` file). Run `authsetup version`; if yours is older, SOP 15 step A updates it first.
+**Checked against `authsetup` 0.5.27** (the `VERSION` file). Run `authsetup version`; if yours is older, SOP 15 step A updates it first.
 
 **How to use it.** Read 01 and 02 once (ten minutes). Then follow 03 → 06 in order on day one. Everything after that is a job you come back for. Each SOP has the same shape: what it is for, what to have ready, numbered steps with exact commands, what you will see, what to do when it goes wrong, what is **Coming** (approved but not built yet, with today's workaround), and where to go next.
 

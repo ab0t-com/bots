@@ -79,7 +79,14 @@ Three rules the SDK README states and you should too: a nil error is not a yes (
 
 Which audience option: `WithExpectedJWTAudience` (v0.12.1) checks user tokens only, so the same routes can also accept other services' mesh keys (`X-API-Key`), which carry no audience. `WithExpectedAudience` checks API keys too and therefore rejects those keys; use it only if your API takes user tokens and nothing else. From v0.12.0 answers are cached briefly by default (a revocation reaches your process within 15 s for users and permissions, 60 s for API keys); wrap a sensitive call's context in `auth.WithFreshValidation(ctx)` to always ask, or `auth.WithValidationCache(0)` to turn caching off. With the `authmw` middleware from v0.12.1, an invalid or expired token is a `401` (it used to be a `503`). SOP 15 step C has the upgrade kits.
 
-*Any language:* `POST /auth/validate-token {"token": …, "expected_audience": "invoicer"}` and `POST /auth/validate-api-key {"api_key": …, "required_permissions": [...], "expected_audience": "invoicer"}`. Both return `{valid, user_id, org_id, permissions}`. The live contract is `https://auth.service.ab0t.com/openapi.json`.
+*Any language:* for a user token, `POST /auth/validate-token {"token": …, "expected_audience": "invoicer", "include_permissions": true}`. **Send `include_permissions: true`.** Without it (and without `required_permissions`) the answer carries `"permissions": []` even for a user who has permissions, so a backend that checks that list turns every customer away. Then decide:
+- `valid: false` → `401`
+- `valid: true` but the permission you need is not in `permissions` → `403`
+- a `5xx` or no answer → `503`, never allow
+
+`"required_permissions": ["invoicer.write.invoices"]` also works, but a missing permission then comes back as `valid: false` with `error: "Missing required permission: …"`, so you can't tell 401 from 403 without reading `error`.
+
+For another service's key, `POST /auth/validate-api-key {"api_key": …, "required_permissions": [...]}` (a key's `permissions` come back without asking). Both answer `{valid, user_id, org_id, permissions, …}`. The live contract is `/openapi.json` on your environment's auth URL (`authsetup env` shows it).
 
 **3. Frontend: sign people in.** Two choices (SOP 07 has the page itself; SOP 08 has drop-in widgets).
 
@@ -105,7 +112,19 @@ It follows the mesh's one token standard: load the SDK once, ask it for a token 
 </script>
 ```
 `authFetch` and `getValidToken` need `@authmesh/sdk` 0.4.1 or newer on that auth host (`<auth>/login/_static/authmesh.version.json`); the generated snippet says so in the browser console if the host serves an older one. Never copy a token into your own variable or storage, and never use the old synchronous `getAccessToken()` before a request.
-*No OAuth client at all (you own the form):* `POST https://auth.dev.ab0t.com/organizations/invoicer-users/auth/login {email, password}` and `/auth/register`; refresh at `/auth/refresh`. The hosted page also accepts `?redirect=<url>` and sends people back there.
+*No OAuth client at all (you own the form):* the same two calls the hosted page makes, both on your USERS org's slug:
+- sign up: `POST <auth>/organizations/invoicer-users/auth/register {"email", "password", "name"}`
+- sign in: `POST <auth>/organizations/invoicer-users/auth/login {"email", "password"}`
+
+Refresh at `/auth/refresh`. Use the org-scoped register, not the global `/auth/register`: a person who signs up globally is in no org of yours and gets 403 later. `<auth>` is your environment's URL (`authsetup env`). Testing from a terminal:
+```sh
+AUTH=https://auth.dev.ab0t.com
+curl -s -X POST "$AUTH/organizations/invoicer-users/auth/register" -H 'Content-Type: application/json' \
+  -d '{"email":"test+1@yourco.example","password":"<a strong password>","name":"Test One"}'
+```
+The answer carries `access_token` and `audience: ["invoicer"]`. The hosted page also accepts `?redirect=<url>` and sends people back there.
+
+*The OAuth client path by hand (what the hosted page does after sign-in):* `GET <auth>/auth/authorize?response_type=code&client_id=<client_id>&redirect_uri=<one of your redirect_uris>&code_challenge=<S256>&code_challenge_method=S256` needs the **signed-in customer's bearer** (`Authorization: Bearer <their access_token>` from the sign-in above); without it the answer is `401 {"detail":"Authentication required"}`. It returns JSON `{"code", "redirect_url"}`. Exchange the code at the `token_endpoint` from `<auth>/.well-known/oauth-authorization-server` (`/auth/oauth/token`, form body `grant_type=authorization_code`, `code`, `client_id`, `redirect_uri`, `code_verifier`).
 
 **4. Put the values in the right place.**
 

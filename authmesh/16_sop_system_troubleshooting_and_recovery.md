@@ -1,6 +1,6 @@
 # 16 · Troubleshooting and recovery
 
-**What this is for.** Something failed, or your users are getting `403`s, or a run says things you do not understand. This SOP lists the messages you will actually see, in the tool's own words (as printed by `authsetup` 0.5.24), what each means, and the fix. It ends with the recovery situations: a wiped local database, stale credentials, a stuck lock, and the wrong environment.
+**What this is for.** Something failed, or your users are getting `403`s, or a run says things you do not understand. This SOP lists the messages you will actually see, in the tool's own words (as printed by `authsetup` 0.5.24; 0.5.27 rewordings noted), what each means, and the fix. It ends with the recovery situations: a wiped local database, stale credentials, a stuck lock, and the wrong environment.
 
 **Before you start.** `authsetup version` (an older binary prints older wording; SOP 15 step A). Then three read-only commands tell you most of the story; run them and keep the output:
 ```sh
@@ -9,6 +9,8 @@ authsetup --env <env> status            # what is live vs config; exit 0 converg
 authsetup --env <env> whois <id>        # which object is this client_id / org_id / key id, and which file drives it
 ```
 Every server exchange is also in `~/.authmesh/invoicer/journal/run-<timestamp>.jsonl`, secrets redacted.
+
+Run and up also print one JSON document with `--json` (0.5.27; `up --json` without `--yes` only plans): `{schema_version, command, env, service, exit_code, steps[{id, name, status, actions[]}], cannot_repair, service_key?}`. `--json` on a command without a machine view warns on stderr and prints human text.
 
 **Read the exit code first, then the whole message.** `0` converged · `1` failed (including an unknown command or step) · `2` unknown flag · `3` drift found by `status` · `4` needs a human. Each `✗` line says what happened and what to do; the `NEXT —` block gives the exact next command (check it names your `--env`). Do not grep for older phrases such as `HTTP 403`: 0.5.24 reworded many of them.
 
@@ -20,10 +22,10 @@ Every server exchange is also in `~/.authmesh/invoicer/journal/run-<timestamp>.j
 |---|---|---|
 | `refusing to mutate PRODUCTION (…) without an explicit target — pass --env dev (or --env <name>), …` | no `--env`; the default is prod | add `--env dev` (or `--env prod` deliberately) |
 | `refusing to mutate PRODUCTION (…) on a non-interactive terminal without confirmation — set AUTHSETUP_CONFIRM_PROD=1 (automation) to proceed` | a script, a pipe or `</dev/null` hit prod | run it in a terminal, or `AUTHSETUP_CONFIRM_PROD=1` if intended |
-| ``up needs a chosen environment and never guesses production — pass --env dev (or --env prod), or run `authsetup use-env dev` once`` | `up` in a script with nothing chosen | add `--env` |
+| `up needs a chosen environment and never guesses production. In a script, name it on the command: …` (0.5.27 prints both lines: `authsetup --env dev … up --yes` and `AUTHSETUP_CONFIRM_PROD=1 authsetup --env prod … up --yes`) | `up` in a script with nothing chosen | add `--env` (and, for production CI, `AUTHSETUP_CONFIRM_PROD=1`); `use-env` is for a person at a terminal |
 | `not applied — this is not a terminal; review the plan above and re-run with --yes to apply` | `up` could not ask you | read the plan; re-run with `--yes` |
 | `auth service unreachable at <url>: …` | wrong env/URL, or the service is down | `authsetup --env <env> env`; dev is `https://auth.dev.ab0t.com` |
-| `environment "dev" resolves to … but an explicit URL … was also given — they must agree (drop one)` | `--env` and `--base-url` / `AUTH_SERVICE_URL` disagree | pass one |
+| `--env dev is <url> (from ~/.authmesh/environments.json \| built-in), but --base-url <url> was also given — they disagree. Run ONE of:` + the two commands on their own lines (before 0.5.27: `… they must agree (drop one)`) | `--env` and `--base-url` / `AUTH_SERVICE_URL` disagree | drop `--base-url`: the env name also picks the creds file. If the URL is another env, the message names it: use that `--env` |
 | `creds dir … is inside a git repo and not gitignored; re-run with --write-gitignore (recommended) or --unsafe-creds-in-repo, …` | your credentials would land in a repository | `--write-gitignore`, or default to `~/.authmesh/` |
 | ``unknown flag --jsn — did you mean --json?  (see `authsetup status --help`)`` (exit `2`) | a typo | use the suggested flag |
 | `✗ unknown command "…" — try: init, up, …` / `unknown step "10" (valid: 01..09)` (exit `1`) | a typo | `authsetup --help` |
@@ -45,7 +47,7 @@ Your `registration.service` is a name in one shared registry; only the org that 
 
 | you see | it means | do |
 |---|---|---|
-| `permission schema name "invoicer" is taken — it is registered to another organization (org <id>), not to your service org invoicer (<id>).` (on a first run: `…, so this new setup cannot use it (nothing was created).`) | another organization owns the name | choose a different `registration.service` in `permissions.json` (and start your permission ids with it), `validate`, preview again; or, if org `<id>` is an **earlier setup of this same service**, point at that setup's credentials with `--creds-dir <dir>` |
+| `permission schema name "invoicer" is taken — it is registered to another organization (org <id>), not to your service org invoicer (<id>).` (on a first run: `…, so this new setup cannot use it (nothing was created).`; from 0.5.27 numbered steps: ``1. Is org <id> yours? `authsetup --env … whois <id>` …``, 2. the new name in all four places (`service.id`, `service.audience`, `registration.service`, every permission-id prefix) or `authsetup … init --publish --as <new> --force` for a starter config, 3. `validate`, `up --dry-run`) | another organization owns the name | choose a different `registration.service` in `permissions.json` (and start your permission ids with it), `validate`, preview again; or, if org `<id>` is an **earlier setup of this same service**, point at that setup's credentials with `--creds-dir <dir>` |
 | `permission schema name "invoicer" is taken — it is reserved by the auth platform, …` | a name the platform uses | a different `registration.service` |
 | `permission schema "invoicer" is registered with no owner recorded (an entry from before ownership was tracked), so the auth service lets nobody change it. … ask the auth team to record your service org invoicer (<id>) as its owner. Re-running authsetup will not help.` | an old registry entry; nobody may change it until its owner is recorded | ask the auth team (platform-team@ab0t.com) with the service name, environment and your service org id. On a first run the message instead suggests `--creds-dir` to an older setup, or a new name |
 | `the auth service refused to register permission schema "invoicer" for your service org …: either another organization owns that name, or it has no owner recorded — the server did not say which.` | an older auth service did not say which case | try both fixes above: a new name, or ask the auth team |
@@ -86,6 +88,8 @@ Scripts: these are all exit `1`. Tell them apart by `is taken` / `no owner recor
 | you see | it means | do |
 |---|---|---|
 | `service API key <id> exists but holds N of M declared permissions (UNDER-PERMISSIONED)` / `doctor`: `service key ◐ … UNDER-PERMISSIONED; missing: … → re-mint` | the key holds fewer permissions than config | re-mint (SOP 14) |
+| `service API key <id> no longer works (revoked or deleted) — the auth service answered that it failed validation: …` (`status` exit `3`; `doctor`: `service key ◐ key <id> no longer works (revoked or deleted) …` (`⨯` with `--strict`); before 0.5.27: `failed validation … fix: re-mint (rotate the key; run step 01 on fresh creds)`) | the auth service says your saved service key is not valid: someone revoked or deleted it | `authsetup --env <env> --config-dir ./config run` (preview with `--dry-run`: `re-mint service key (saved key is revoked)`). Step 01 moves the dead key's entry to `.archive/`, mints a new key and prints ``your saved service key no longer works (revoked or deleted) — minted <id>; deploy it: authsetup --env <env> … settings --env-file .env, then restart your app …``; write the key where your app reads it (SOP 06 step 4) and restart the app. Never point `--creds-dir` at a new folder for this: that starts a second setup and stops on `is taken` |
+| `could not check the saved service API key <id> against <url> (…) — a failed check is not a revoked key, so nothing was re-minted; retry when the auth service answers` (`status` exit `1`; `doctor`: `could not check the key …`) | the check itself failed (5xx, timeout, unreachable) | nothing to fix on your side; retry later. authsetup never re-mints on a failed check |
 | `default team carries all default_grant perms (missing: …): drift — run step 04 to sync` | team lost a permission | `run 04` (or `up`) |
 | `test user is missing default_grant permissions: … (registration→team flow broken)` | sign-up did not join the team | `run 04`; if it persists set `end_users.default_role: "member"` and `run 04` |
 | `could not remove test user setup-go-test-… from end-users org …: … — remove it from that org's members` (warning) | step 06's cleanup failed; the check itself is unaffected | remove that member later |
@@ -120,7 +124,7 @@ Scripts: these are all exit `1`. Tell them apart by `is taken` / `no owner recor
 |---|---|---|
 | `✗ run failed at step NN (<name>)` with later steps `not reached` | that step failed | fix the line above it; NEXT `resume with: authsetup --env … run NN …` |
 | `· deferred — it needs your service org, which step 01 creates; …` in a preview | normal on a first preview | nothing |
-| `~ re-sent: …` | a setting sent again unchanged | nothing (SOP 13) |
+| `~ re-sent: …` | a setting sent again unchanged | nothing (SOP 13). From 0.5.27 a schema the registry did not have yet reads `✓ register permission schema …` (a create), not `~ re-sent` |
 | `Could not work out the plan — here is what the checks said:` (`up`) | the preview failed | read the step detail under it, as above |
 | `another authsetup run (pid 1234) is working on this setup right now (lock <path>) — wait for it to finish, then run again` | a second run is alive | wait |
 | `a stale lock from a run that is no longer running (pid 1234) was left at <path> — it is safe to remove that file, then run again` | a crashed run left its lock | move **only** that file aside, run again |

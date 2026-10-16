@@ -48,5 +48,5 @@
     "a NEXT line printed when no target was chosen has no --env; pasted as is, it targets prod",
     "the default credentials directory ~/.authmesh/<service>/ holds every environment, prod included"
   ],
-  "verified_against": { "authsetup": "0.5.25 (help, source, migration kits v0.5.23-to-v0.5.24 and v0.5.24-to-v0.5.25; sop_command_lint 0 offenders)", "auth-sdk-go": "v0.12.1", "ab0t-auth": "0.1.4", "date": "2026-10-16" }
+  "verified_against": { "authsetup": "0.5.27 (help, source, migration kits v0.5.23-to-v0.5.24 … v0.5.26-to-v0.5.27; sop_command_lint 0 offenders)", "auth-sdk-go": "v0.12.1", "ab0t-auth": "0.1.4", "date": "2026-10-16" }
 }

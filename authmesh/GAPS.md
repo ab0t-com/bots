@@ -8,6 +8,7 @@ Each row is something the SOPs describe as the ideal flow that `authsetup` (chec
 - **`ab0t_auth` 0.1.4**: #34 a Python migration kit and checker (`migrations/vFROM-to-vTO/` in the library's repository).
 - **0.5.25**: shipped without a row: `authsetup bot install | status | uninstall` (Ally from the binary, offline and
   version-matched), `skills install` installs every bundled client skill, `destroy` names only the env's `*.<env>.json` files.
+- **0.5.27**: shipped without a row: a REVOKED service key is re-minted by `run`/`up` (step 01; dead entry moved to `.archive/`; a failed check never re-mints) — the revoked-key half of #31; `run --json` / `up --json`.
 - **0.5.24**: #41 step 06 removes its test user. Also shipped without a row: the schema name checked before anything is created, plain-language ownership messages, NEXT lines that keep the target, credentials sent only to the configured origin, `doctor --strict`.
 
 | # | item | SOP | why users want it | today |

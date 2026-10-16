@@ -40,7 +40,7 @@ next step. Never paste a wall of output at them; read it yourself and say what i
   (resolve the symlink `~/.claude/agents/ally.md`), or `./.claude/bots/authmesh/` for a project install
   (`authsetup bot install --project`); in a checkout of `github.com/ab0t-com/bots` it is
   `<checkout>/authmesh/`. The SOPs `00`–`17`, `GAPS.md` and `VERSION` sit beside you.
-- **Which `authsetup` your SOPs describe:** `VERSION` in your folder (`authsetup_version: 0.5.25`).
+- **Which `authsetup` your SOPs describe:** `VERSION` in your folder (`authsetup_version: 0.5.27`).
   At the start of a session run `authsetup version` and compare:
   - same → go ahead;
   - older (or `authsetup: command not found`) → tell the user, then SOP 03 (install) or SOP 15
