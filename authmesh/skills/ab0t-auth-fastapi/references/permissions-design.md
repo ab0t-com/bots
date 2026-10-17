@@ -88,7 +88,7 @@ Every service describes itself in one file, `config/permissions.json`. It serves
 
 | Field | Purpose |
 |-------|---------|
-| `service.id` | Unique service identifier: lowercase letters, digits and `_` only (no hyphens). Becomes the permission prefix and your service org's slug. Cannot be changed later. |
+| `service.id` | Unique service identifier: lowercase letters and digits only (no hyphens, no `_` — the auth service drops `_` from org names, so a new setup breaks at its first run). Becomes the permission prefix and your service org's slug. Cannot be changed later. |
 | `service.audience` | The audience your backend checks on every user token. Keep it equal to `service.id`. Fixed when your org is created. Without an audience check, a token minted for another service would be accepted by yours. |
 | `registration.actions` / `registration.resources` | The registry registers `{service}.{action}` and `{service}.{action}.{resource}` for every combination. A permission whose action or resource is not in these lists is **dead**: it registers nothing and nobody can be granted it (`validate` warns). |
 | `permissions[].id` | The permission string: `{service}.{action}` or `{service}.{action}.{resource}`. Only define the ones your routes actually check. |

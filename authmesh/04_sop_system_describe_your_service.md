@@ -2,7 +2,14 @@
 
 **What this is for.** Writing the one file that tells the mesh what your service is, what people can do in it, who gets what by default, and how your users are organised. Everything `authsetup run` builds comes from this file.
 
-**Before you start.** SOP 03 done. A folder for your service with an empty `config/` directory. Decide your service's short name now: **lowercase, letters/digits/underscores, no hyphens**, and you cannot change it later (it becomes your org slug and your token audience).
+**Before you start.** SOP 03 done. A folder for your service with an empty `config/` directory. Decide your service's short name now (next section); you cannot change it later.
+
+## Choosing your service name
+
+- **The rule: lowercase letters and digits only, starting with a letter, at least 3 characters.** `northwindrentals` and `invoicer2` are fine. Do not use hyphens, because the permission registry refuses them. Do not use underscores either. The registry accepts them, but the auth service drops them from org names (`nw_rentals` becomes the org `nwrentals`), and the first run then fails at step 05 because your users' login page is not where authsetup expects it. Keep the name short: `<name>-api-consumers` must fit the 63-character limit on org names, so use 49 characters at most.
+- **It must be free.** On each environment the name is one entry in a shared permission registry, and org names are unique too. If another organization already holds the name, your first preview stops with `is taken` before anything is created (SOP 05). Generic words (`rentals`, `billing`, `app`) are the most likely to be taken, so put your company in the name (`northwindrentals`). dev and prod check the name separately, so a name that is free on dev can still be taken on prod. `authsetup --env prod --config-dir ./config up --dry-run` checks prod without changing anything.
+- **It is the same word everywhere.** It goes in `service.id`, `service.audience` and `registration.service`, and it starts every permission id (`northwindrentals.read.equipment`). Your org names come from it (`northwindrentals`, `northwindrentals-users`, `northwindrentals-api-consumers`), and so do your customers' login page `/login/northwindrentals-users`, your service key's name (`northwindrentals-internal`), the default admin email (`northwindrentals-admin@…`) and your credentials folder (`~/.authmesh/northwindrentals/`). `init --publish --as <name>` fills all of these in for you.
+- **Why you can't change it later.** Your org's audience is stamped on it when it is created and can never be changed; every customer token carries it and every backend checks it. Your permission ids are stored in your users' default team, in every grant and in every API key (a key keeps the permissions it was minted with). authsetup also files your credentials under the name. So a new name means a new, separate setup, with new orgs, a new login page and new keys. Your existing users stay in the old users org. authsetup has no rename command.
 
 ## Steps
 
@@ -38,7 +45,7 @@ cp config/hosted-login.json.example config/hosted-login.json
   "resources": ["invoices", "read_all"]
 }
 ```
-- `service.id`, `registration.service` and every permission prefix must be the **same word**. `validate` enforces it.
+- `service.id`, `service.audience`, `registration.service` and every permission prefix must be the **same word** (*Choosing your service name*, above). `validate` checks that each permission id starts with `registration.service`. It does not compare `service.id` or `service.audience` with that word, so check those two yourself.
 - `audience` is stamped on your org when it is created and **cannot be changed afterwards**. Your backend will check tokens against it forever (SOP 06). Keep it equal to `id` unless you have a reason.
 - `registration.actions` × `registration.resources` is what the registry actually registers. A permission whose action or resource is not in those lists is **dead**: it registers nothing and nobody can be granted it. `validate` warns about this.
 
@@ -86,6 +93,8 @@ Two patterns:
 |---|---|---|
 | `flat` | your users share one space (a tool, a dashboard, an API anyone calls) | membership of `invoicer-users` + the default team |
 | `workspace-per-user` | each user is a tenant: their own data, their own teammates, their own bill | the above **plus** a private org they own, with its own default team |
+
+Not sure which? Ask one question: will a customer ever be more than one person, sharing records or inviting colleagues? If yes, pick `workspace-per-user`. If each customer is one person who sees only their own things (a renter and their bookings), `flat` works. But under `flat` every customer's token carries the same `org_id`, so your backend must tell customers apart by `user_id` (SOP 06 step 2). SOP 09 step 2 compares the two patterns in full. If you switch later, only new sign-ups get the new pattern.
 
 For `workspace-per-user` you may add to `config`: `slug_template` (default `{service_id}-{email_prefix}-{short_id}`), `name_template`, `default_team_name`, and `default_team_permissions` (defaults to your `default_grant` set). SOP 09 goes deeper.
 

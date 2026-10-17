@@ -50,7 +50,7 @@ InvoiceReader = Annotated[AuthenticatedUser, Depends(require_permission(auth, "i
 async with auth.lifespan(): ...             # in your FastAPI lifespan
 register_auth_exception_handlers(app)       # proper 401/403 bodies
 ```
-Environment: `AB0T_AUTH_URL`, `AB0T_AUTH_AUDIENCE=invoicer`. Always pass your audience; never leave it out to make a `401` go away. Never set `AB0T_AUTH_BYPASS=true` (it also needs `AB0T_AUTH_DEBUG=true`, and signs every request in as a fake user) outside a local sandbox. Then, in every route that takes a resource id, check the resource's `org_id` against the caller's after you load it; permission says *what kind* of thing they may do, not *whose*.
+Environment: `AB0T_AUTH_URL`, `AB0T_AUTH_AUDIENCE=invoicer`. Always pass your audience; never leave it out to make a `401` go away. Never set `AB0T_AUTH_BYPASS=true` (it also needs `AB0T_AUTH_DEBUG=true`, and signs every request in as a fake user) outside a local sandbox. Then, in every route that takes a resource id, load the resource and check that it belongs to the caller; permission says *what kind* of thing they may do, not *whose*. With a workspace per user, compare the resource's `org_id` with the caller's. In a shared space (`flat`), every customer has the same `org_id`, so store the owner's `user_id` on each record and compare that instead (SOP 09 step 2).
 
 From `ab0t_auth` 0.1.4 answers are cached briefly by default: a revoked grant stops passing within 15 s, a revoked API key within 60 s. For sensitive routes (admin, money, ownership) pass `fresh=True` to the dependency (`require_permission(auth, "…", fresh=True)`) so that call always asks the auth service. Every TTL is configurable; `token_cache_ttl=0` turns caching off. SOP 15 step D has the upgrade kit.
 
@@ -87,6 +87,8 @@ Which audience option: `WithExpectedJWTAudience` (v0.12.1) checks user tokens on
 `"required_permissions": ["invoicer.write.invoices"]` also works, but a missing permission then comes back as `valid: false` with `error: "Missing required permission: …"`, so you can't tell 401 from 403 without reading `error`.
 
 For another service's key, `POST /auth/validate-api-key {"api_key": …, "required_permissions": [...]}` (a key's `permissions` come back without asking). Both answer `{valid, user_id, org_id, permissions, …}`. The live contract is `/openapi.json` on your environment's auth URL (`authsetup env` shows it).
+
+*Does the validate call need your service key?* No. `/auth/validate-token` and `/auth/validate-api-key` are open on purpose: the auth service checks the token or key in the body. Today it ignores an `X-API-Key` header on these two calls, and the answer is the same with or without one. Your service key is for calls your service makes as itself, such as `POST /permissions/check` (which needs a caller credential) or another mesh service that takes your key. The Go SDK sends the key you gave `WithAPIKey` on every call, these two included, and that does no harm. When an environment rate-limits these two calls, it counts per calling IP address, not per key. Whether a later version will use a caller's key here (for rate limits or audit) has not been decided; nothing requires it today.
 
 **3. Frontend: sign people in.** Two choices (SOP 07 has the page itself; SOP 08 has drop-in widgets).
 

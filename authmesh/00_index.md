@@ -2,7 +2,7 @@
 
 **Who this is for.** A team putting its own product on the ab0t auth mesh with one tool, `authsetup`: sign-in for your customers, permissions, a branded login page, keys for your backend, and connections to other services such as billing and payment. No auth internals required. The running example throughout is **Acme** and their service **`invoicer`**.
 
-**Checked against `authsetup` 0.5.27** (the `VERSION` file). Run `authsetup version`; if yours is older, SOP 15 step A updates it first.
+**Checked against `authsetup` 0.5.28** (the `VERSION` file). Run `authsetup version`; if yours is older, SOP 15 step A updates it first.
 
 **How to use it.** Read 01 and 02 once (ten minutes). Then follow 03 → 06 in order on day one. Everything after that is a job you come back for. Each SOP has the same shape: what it is for, what to have ready, numbered steps with exact commands, what you will see, what to do when it goes wrong, what is **Coming** (approved but not built yet, with today's workaround), and where to go next.
 
@@ -17,7 +17,7 @@
 | 01 | [Scope model, for clients](01_sop_system_scope_model_for_clients.md) | One extra word, `scope: "org" \| "platform"`; the service that defines a permission decides who gets it. In the tool since 0.5.21; what is still Coming is marked. |
 | 02 | [Day zero: a new customer joins](02_sop_system_day_zero_new_customer.md) | Acme puts `invoicer` on the mesh, end to end, in nine moves. |
 | 03 | [Install, sign in, environments](03_sop_system_install_sign_in_environments.md) | One `curl` to install; check the version; `prod` is the default; `use-env dev`; who the tool acts as. |
-| 04 | [Describe your service](04_sop_system_describe_your_service.md) | `permissions.json`: actions, resources, permissions, `default_grant`, `scope`, roles, how users are organised. |
+| 04 | [Describe your service](04_sop_system_describe_your_service.md) | Choosing your service name; `permissions.json`: actions, resources, permissions, `default_grant`, `scope`, roles, how users are organised. |
 | 05 | [Check it, preview it, run it](05_sop_system_check_and_first_run.md) | `authsetup up`: the plan in plain words, your yes, then the apply (experts: `--dry-run run` → `run`); the name check before anything is created; what each of steps 01–08 creates and where credentials go. |
 | 06 | [Wire it into your app](06_sop_system_wire_it_into_your_app.md) | `authsetup settings --env-file .env` and `authsetup snippet login`: service key + audience in the backend (Python `ab0t_auth`, Go `auth-sdk-go`); client id + org slug in the frontend. |
 | 07 | [Login page and branding](07_sop_system_hosted_login_and_branding.md) | `hosted-login.json`: colours, wording, sign-up vs invitation-only, where invites land. |

@@ -21,6 +21,20 @@ invoicer                 ← your service org: Acme's staff and the service key
 *Shared space (`flat`)*: all users in `invoicer-users`, all holding the defaults. Right for tools, dashboards, APIs anyone calls.
 
 *Workspace per user (`workspace-per-user`)*: each signup also gets a private org they own, nested under `invoicer-users`, with its own default team. Right when each customer has their own data, invites their own teammates, and pays their own bill.
+
+**What each gives you, and what your backend checks.**
+
+| | `flat` | `workspace-per-user` |
+|---|---|---|
+| the customer's token `org_id` | the same for everyone: your users org | their own workspace (on sign-in, with `default_landing: "workspace"`, below) |
+| how your backend tells customers apart | `user_id`: store the owner's `user_id` on each record and compare it with the caller's | `org_id`: store the workspace's `org_id` on each record and compare it with the caller's (SOP 06) |
+| teammates | none; customers cannot invite anyone or see each other | the owner invites people into their workspace and hands out your `org` permissions there |
+
+A rental business that rents to individuals can use `flat`: store each booking with the renter's `user_id` and serve it only to that `user_id`. If it rents to companies whose staff book on one company account, it needs `workspace-per-user`. Choose `workspace-per-user` whenever a customer can be more than one person, or when a customer's own admin should decide who sees and does what. `flat` has no idea of a customer's team; you would have to build that in your app.
+
+Under `workspace-per-user`, a token whose `org_id` is your users org itself (`invoicer-users`) does not belong to any customer's workspace. The token from sign-up is one of these: it stays on the users org, and the next sign-in lands in the workspace. Never store or match records under the users org's `org_id`.
+
+**Changing it later.** Edit `org_structure` and run `up`. Only people who sign up after the change get the new pattern. Existing users stay in the shared space, and today you have no way to give them workspaces yourself (*Coming*). Records you stored by `user_id` would also need moving to workspace `org_id`s. Decide before launch.
 ```json
 "end_users": {
   "default_role": "invoicer-user",

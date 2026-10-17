@@ -8,7 +8,7 @@ This folder is a complete, client-facing system for using the ab0t auth mesh thr
 - `skills/ally-mesh-client/SKILL.md` — the skill Ally loads; it routes to the SOPs.
   The other folders under `skills/` are the companion skills Ally may load by name (copied here so
   the bot stands alone; `authsetup-cli` is the one the binary itself bundles).
-- `VERSION` — the `authsetup` version these pages were checked against (`authsetup_version: 0.5.27`).
+- `VERSION` — the `authsetup` version these pages were checked against (`authsetup_version: 0.5.28`).
 - `bot.json` — the manifest (jobs, SOPs, hand-offs, dangerous defaults, `verified_against`).
 - `install.sh` — installs Ally into Claude Code (downloads this folder, symlinks agent + skills).
 - `GAPS.md` — every **Coming** item across the SOPs; the `authsetup` spec list.
@@ -39,7 +39,7 @@ Then start a new Claude Code session and say `@agent-ally`, or "set up auth for 
 "connect to billing", "my users get 403". Ally installs `authsetup` with you (SOP 03):
 ```sh
 curl -fsSL https://raw.githubusercontent.com/ab0t-com/clientsetup/main/install.sh | sh
-authsetup version                  # should match VERSION here (0.5.27); older → authsetup update
+authsetup version                  # should match VERSION here (0.5.28); older → authsetup update
 authsetup skills install           # the bundled client skills (authsetup-cli and the rest), which Ally also uses
 ```
 By hand instead: symlink `agent.md` to `~/.claude/agents/ally.md` (or `.claude/agents/ally.md` in one

@@ -40,7 +40,7 @@ next step. Never paste a wall of output at them; read it yourself and say what i
   (resolve the symlink `~/.claude/agents/ally.md`), or `./.claude/bots/authmesh/` for a project install
   (`authsetup bot install --project`); in a checkout of `github.com/ab0t-com/bots` it is
   `<checkout>/authmesh/`. The SOPs `00`–`17`, `GAPS.md` and `VERSION` sit beside you.
-- **Which `authsetup` your SOPs describe:** `VERSION` in your folder (`authsetup_version: 0.5.27`).
+- **Which `authsetup` your SOPs describe:** `VERSION` in your folder (`authsetup_version: 0.5.28`).
   At the start of a session run `authsetup version` and compare:
   - same → go ahead;
   - older (or `authsetup: command not found`) → tell the user, then SOP 03 (install) or SOP 15
@@ -177,12 +177,12 @@ next step. Never paste a wall of output at them; read it yourself and say what i
 | "what is this scope thing", "org vs platform", "who can grant what" | `01_sop_system_scope_model_for_clients.md` |
 | "walk me through joining the mesh", "what will happen end to end" | `02_sop_system_day_zero_new_customer.md` |
 | install, update, "which environment", "am I on prod?", `--as`, who the tool acts as, version | `03_sop_system_install_sign_in_environments.md` |
-| permissions.json, `init --publish`, actions/resources, default_grant, scope, roles, flat vs workspace, validate errors | `04_sop_system_describe_your_service.md` |
-| "set it up", "run it", `up`, dry-run, what step 0N does, where credentials went, first prod run, "name is taken" | `05_sop_system_check_and_first_run.md` |
-| backend key, audience, client id, org slug, `.env`, `settings`, login snippet, Python `ab0t_auth`, Go `auth-sdk-go`, 401 audience | `06_sop_system_wire_it_into_your_app.md` |
+| choosing the service name, permissions.json, `init --publish`, actions/resources, default_grant, scope, roles, flat vs workspace, validate errors | `04_sop_system_describe_your_service.md` |
+| "set it up", "run it", `up`, dry-run, what step 0N does, where credentials went, `ADMIN_EMAIL`, first prod run, "name is taken" | `05_sop_system_check_and_first_run.md` |
+| backend key, audience, client id, org slug, `.env`, `settings`, login snippet, Python `ab0t_auth`, Go `auth-sdk-go`, 401 audience, "does validate-token need my key", checking who owns a record | `06_sop_system_wire_it_into_your_app.md` |
 | login page, branding, colours, sign-up vs invite-only, invite landing URLs, `default_landing`, `login-url` | `07_sop_system_hosted_login_and_branding.md` |
 | widgets, user menu, API-key widget, embed, pin a version, `AuthMeshWidgets` | `08_sop_system_js_widgets.md` |
-| my users, default team, workspace per user, invite a user, remove a user | `09_sop_system_your_users.md` |
+| my users, default team, flat vs workspace per user (which one, what the backend checks, switching later), invite a user, remove a user | `09_sop_system_your_users.md` |
 | my teammates, invite an admin, `grant-platform` / `revoke-platform` / `platform-holders` | `10_sop_system_your_team_and_platform_permissions.md` |
 | connect to billing/payment/audit, `providers`, `connect`, tiers, `clients.d`, `run 07` | `11_sop_system_using_other_services.md` |
 | let others call my API, `run 08`, consumer tiers, directory listing, approve a partner | `12_sop_system_opening_your_service_to_others.md` |

@@ -14,6 +14,13 @@ authsetup --env dev --config-dir ./config up --dry-run
 
 **Before anything is created, the name is checked.** Your `registration.service` (`invoicer`) is a name in one shared permission registry. Step 01 reads that registry first, in the preview too. If another organization already owns the name, the preview stops (exit `1`) with `permission schema name "invoicer" is taken — …` and nothing is created; see *If it goes wrong*. If the registry cannot be read, it says `could not read the public permission registry (…) — the schema name is checked again once your service org exists` and carries on.
 
+**Choose your admin's email before the first apply.** Step 01 creates one admin account for your service. It owns your service org, and authsetup signs in as it from then on. Its password is generated and kept in `~/.authmesh/invoicer/invoicer.<env>.json`, so nobody types it. Unless you set `ADMIN_EMAIL`, the address is `invoicer-admin@` plus the domain of `service.maintainer`, or `invoicer-admin@example.com` when `permissions.json` has no `maintainer` (as after `init --publish`). The preview then says `(set ADMIN_EMAIL to use a real mailbox you control)`.
+```sh
+ADMIN_EMAIL=invoicer-admin@acme.example authsetup --env dev --config-dir ./config up --dry-run
+ADMIN_EMAIL=invoicer-admin@acme.example authsetup --env dev --config-dir ./config up
+```
+Use a real mailbox that your team reads. The auth service mails this address: above all the **password-reset link**, which is how you get the admin back if its credentials file is lost or the password stops working (SOP 16), and also notices such as a sign-in from a new device. `example.com` is reserved and never receives mail, so with the default address none of this mail arrives and you cannot reset a lost admin password yourself. Addresses ending in `.test`, `.local`, `.localhost` or `.invalid` are refused at sign-up. An email address belongs to one account per environment, so each service needs its own admin address (`ops+invoicer@acme.example` works); a reused one stops step 01 with `admin … already exists`. authsetup reads `ADMIN_EMAIL` only on the first run against an environment. After that it uses the saved file, and changing the variable changes nothing.
+
 **2. Say yes, apply.**
 ```sh
 authsetup --env dev --config-dir ./config up
