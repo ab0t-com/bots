@@ -42,8 +42,10 @@ invoicer                         ← your app: your staff, your admin account, y
 
 - **Membership is the grant.** Join an org (sign-up, invitation) → join a team → hold the team's
   permissions. No per-user grants, no webhooks.
-- **Parent and child.** An admin of a parent org can act in the orgs beneath it (that is how your
-  service admin rolls a new default out to every workspace with `backfill`). A child cannot act in its
+- **Parent and child.** An admin of a parent org can see and manage the orgs beneath it through org-level
+  calls (list members and teams, invite). Two exceptions: a TEAM is changed only by a sign-in to the team's
+  own org, and only a member can sign in to a user's workspace. So your service admin cannot change a team
+  in a workspace it is not a member of; `backfill` names those, and their owners apply it. A child cannot act in its
   parent or its siblings. Permissions do **not** flow down the org tree: what someone can do comes from
   their teams in the org they are working in.
 - **One cross-customer word.** Most permissions act inside one customer's org (`scope: "org"`, the
@@ -80,7 +82,8 @@ invoicer                         ← your app: your staff, your admin account, y
   minutes) unless your backend asks the auth service on each request (`permission_check_mode="server"`),
   and even then the SDKs cache answers for up to 15 s (permissions) or 60 s (API keys).
 - A new default permission reaches existing users within about five minutes or on a fresh login; in
-  `workspace-per-user`, existing workspaces need `backfill` (SOP 13).
+  `workspace-per-user`, existing workspaces need `backfill` (SOP 13) — only those your service admin is a
+  member of; a user's own workspace is updated by its owner.
 - Your API should answer `401` for a missing or invalid token, `403` for a valid caller without the
   permission (`404` for another org's resource, if you prefer not to reveal that it exists), and `503` when the auth service could not be asked (never an allow).
 

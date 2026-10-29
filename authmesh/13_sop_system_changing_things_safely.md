@@ -52,7 +52,9 @@ authsetup --env dev --config-dir ./config backfill --only-org <one workspace org
 #   → that user logs in again → the formerly-403 call works
 authsetup --env dev --config-dir ./config backfill                            # all workspaces; idempotent
 ```
-`--extra-perm invoicer.write.invoices` (repeatable) adds a non-default permission to every workspace owner's default team. Under `flat` there is nothing to backfill; step 04 already updated the shared team.
+Who it can change: the auth service changes a workspace's team only for a sign-in to that workspace (your end-users org may list the team, not change it), so `backfill` changes a workspace only where your service admin is a member holding `teams.write`. A user's own workspace usually has only that user: `backfill` prints `NOT changed: workspace … — your service admin … is not a member of this workspace …`, plans nothing for it (the dry run checks this, read-only) and exits non-zero. That is workspace isolation, by design; a re-run will not change it. The workspace's owner applies the change, signed in to that workspace.
+
+It rolls out `default_grant` plus `default_team_permissions`. `--extra-perm invoicer.write.invoices` (repeatable) adds a non-default permission to the workspace's default team, which is everyone in it, including people invited later. So it refuses a `platform`, `high`/`critical`-risk or privileged permission: grant that to the one person who needs it. Under `flat` there is nothing to backfill; step 04 already updated the shared team.
 
 **6. Watch for drift.** A scheduled `authsetup --env prod --config-dir ./config status` exits `3` when the server no longer matches config (someone edited a team by hand, a half-failed run); its summary reads `── Check summary ──` and `checked — server state matches config` when all is well. In CI use the exit code of the human `status` (or `status --pipeline`); `status --json` always exits `0` and carries the state in the document. `--dry-run run` shows the repair; `run` applies it.
 
@@ -74,8 +76,9 @@ A clean apply ends `no changes were needed — server state already matches conf
 - Exit `4`, `needs you`: step 4.
 - `✗ run failed at step NN (…)`: read the line above it (SOP 16 has every message), fix, then the printed resume command.
 - `redirect_uris 20/20 — AT the limit; the auth service rejects the next one with 400 (max 20). Remove one before adding.`: exactly that.
-- `backfill`: `403` on the team update for one workspace: your admin lacks authority over that child org in this environment; stop and contact the platform team.
-- `backfill` changed nothing for a permission you added: it must be `default_grant: true` or passed with `--extra-perm`.
+- `backfill`: `NOT changed: workspace … your service admin … is not a member of this workspace` (or `… does not hold teams.write there`), exit 1: by design, see step 5; the workspace's owner applies it. 0.5.28 and earlier tried anyway and failed with `HTTP 404: Team not found`, after a dry run that promised the change.
+- `backfill`: `refusing --extra-perm: "…" is a high-risk permission …`: the default team is everyone in the workspace; grant it to one person instead.
+- `backfill` changed nothing for a permission you added: it must be `default_grant: true`, in `default_team_permissions`, or passed with `--extra-perm`.
 - Two people ran at once: `another authsetup run (pid …) is working on this setup right now (lock …) — wait for it to finish, then run again`. If it instead says `a stale lock from … was left at … — it is safe to remove that file`, move that one file aside.
 - A step 04 that fails on the permission schema still updated your users' sign-in settings and client first (0.5.24 checks the schema last there); fix the schema message (SOP 16) and run again.
 

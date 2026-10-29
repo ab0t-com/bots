@@ -52,7 +52,7 @@ Under `workspace-per-user`, a token whose `org_id` is your users org itself (`in
 Then in `hosted-login.json` set `registration.default_landing: "workspace"` so a login scopes the token to the user's own workspace instead of the shared parent. Apply with `authsetup --env dev --config-dir ./config run 04`. In their workspace a user is **owner**: they can invite teammates, create teams, and hand out `invoicer.write.invoices` or `invoicer.admin` **for that workspace only**. They can never obtain a `platform` permission.
 
 **3. Change what everyone gets.**
-Flip `default_grant` in `permissions.json`, then `authsetup --env dev --config-dir ./config run`. In `flat`, the shared team is updated at once. In `workspace-per-user`, existing workspaces carry a frozen copy; roll the change out with `backfill` (SOP 13). Users see it within about five minutes, or at once on a fresh login.
+Flip `default_grant` in `permissions.json`, then `authsetup --env dev --config-dir ./config run`. In `flat`, the shared team is updated at once. In `workspace-per-user`, existing workspaces carry a frozen copy; roll the change out with `backfill` (SOP 13). It reaches the workspaces your service admin is a member of; a user's own workspace is changed by its owner. Users see it within about five minutes, or at once on a fresh login.
 
 **4. Invite someone.**
 Your app (or you) calls the auth service as an admin of the target org:
@@ -73,7 +73,7 @@ Carol gets an email with a link on the auth service; after clicking she is sent 
 
 - Users sign up but have no permissions: they used the global sign-up instead of your org's page, or the default team lost its permissions. Point sign-up at `/login/invoicer-users` and re-run `run 04`.
 - `end-users org "invoicer-users" already exists but is not visible to this admin`: a half-finished earlier run. Do not create a second one; contact the platform team to repair membership, then re-run.
-- A workspace owner gets `403` on something you just made a default: that workspace's team has the old copy. `authsetup --env dev backfill --only-org <workspace org id>` (SOP 13).
+- A workspace owner gets `403` on something you just made a default: that workspace's team has the old copy. `authsetup --env dev backfill --only-org <workspace org id>` changes it if your service admin is a member there; otherwise it says `NOT changed … not a member`, and the owner adds the permission to the workspace's default team, signed in to that workspace (SOP 13).
 - Switching `flat` → `workspace-per-user` later: only **new** signups get workspaces. Existing users keep the shared space. Plan the switch before launch if you can.
 
 ## Coming

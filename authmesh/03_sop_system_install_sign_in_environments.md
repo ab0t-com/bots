@@ -13,7 +13,7 @@ authsetup version
 ```
 The installer checks the published sha256 before it writes anything, installs to `/usr/local/bin/authsetup` (to install elsewhere, set the variable for `sh`: `curl -fsSL …/install.sh | PREFIX=$HOME/.local sh`), and keeps the previous binary as `authsetup.previous` so you can roll back. It is safe to re-run.
 
-These SOPs are checked against **`authsetup 0.5.28`** (the `VERSION` file next to them). If `authsetup version` prints something older, update first: `authsetup update --check`, then `authsetup update` (SOP 15). Older binaries print different messages from the ones SOP 16 quotes, and before 0.5.24 a NEXT line could drop your environment.
+These SOPs are checked against **`authsetup 0.5.29`** (the `VERSION` file next to them). If `authsetup version` prints something older, update first: `authsetup update --check`, then `authsetup update` (SOP 15). Older binaries print different messages from the ones SOP 16 quotes, and before 0.5.24 a NEXT line could drop your environment.
 
 **2. Know which environment you are talking to.**
 ```sh
